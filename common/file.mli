@@ -1,9 +1,11 @@
-open! Base
+(* open! Base *)
+(*
 open Base.Exported_for_specific_uses (* for [Ppx_compare_lib] *)
+*)
 
 module Name : sig
   (** Strongly-typed filename *)
-  type t [@@deriving_inline sexp, compare]
+  type t = string [@@deriving_inline sexp, compare]
 
   include sig
     [@@@ocaml.warning "-32"]
@@ -17,7 +19,9 @@ module Name : sig
 
   val relative_to : dir:string -> t -> string
 
-  include Identifiable.S with type t := t
+  (* include Identifiable.S with type t := t *)
+  val of_string : string -> t
+  val to_string : t -> string
 end
 
 val initial_dir : unit -> string
@@ -44,9 +48,10 @@ module Location : sig
   [@@@end]
 
   val beginning_of_file : Name.t -> t
-  val of_source_code_position : Source_code_position.t -> t
+  val of_source_code_position : Lexing.position -> t
 
-  include Comparable.S with type t := t
+  (* include Comparable.S with type t := t *)
+  val equal : t -> t -> bool
 end
 
 module Digest : sig
@@ -65,4 +70,14 @@ module Digest : sig
 
   val of_string : string -> t
   val to_string : t -> string
+end
+
+module Location_map : sig
+  include (module type of Map.Make(Location))
+  val to_alist : 'v t -> (key * 'v) list
+  val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t
+  val of_alist_exn: (key * 'b) list -> 'b t
+
+  (** Creates a map from an association list with unique keys, raising an exception if duplicate 'a keys are found. *)
+  val of_alist_reduce: (key * 'b) list -> f:('b -> 'b -> 'b) -> 'b t
 end

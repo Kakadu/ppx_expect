@@ -1,4 +1,4 @@
-open Base
+(* open Base *)
 open Expect_test_common
 
 module Saved_output : sig
@@ -11,9 +11,9 @@ module Test_outcome : sig
   (** Outcome of a group of test. Either a single [let%expect_test], or a whole file for
       toplevel expect test. *)
   type t =
-    { expectations : Fmt.t Cst.t Expectation.t Map.M(File.Location).t
+    { expectations : Fmt.t Cst.t Expectation.t File.Location_map.t
     ; uncaught_exn_expectation : Fmt.t Cst.t Expectation.t option
-    ; saved_output : Saved_output.t Map.M(File.Location).t
+    ; saved_output : Saved_output.t File.Location_map.t
     ; trailing_output : Saved_output.t
     ; uncaught_exn : Saved_output.t option
     ; upon_unreleasable_issue : Expect_test_config_types.Upon_unreleasable_issue.t

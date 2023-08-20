@@ -1,14 +1,14 @@
-open! Base
-open Import
+(* open! Base *)
+(* open Import *)
 
 module Name : sig
-  type t [@@deriving_inline sexp, compare]
+  type t = string [@@deriving_inline sexp, compare]
 
   include sig
     [@@@ocaml.warning "-32"]
 
-    include Sexplib0.Sexpable.S with type t := t
     include Ppx_compare_lib.Comparable.S with type t := t
+    include Sexplib0.Sexpable.S with type t := t
   end
   [@@ocaml.doc "@inline"]
 
@@ -16,13 +16,20 @@ module Name : sig
 
   val relative_to : dir:string -> t -> string
 
-  include Identifiable.S with type t := t
+  (* include Identifiable.S with type t := t *)
+  val of_string : string -> t
+  val to_string : t -> string
 end = struct
   include String
+
+  let t_of_sexp = Sexplib.Conv.string_of_sexp
+  let sexp_of_t = Sexplib.Conv.sexp_of_string
 
   let relative_to ~dir t =
     if not (Stdlib.Filename.is_relative t) then t else Stdlib.Filename.concat dir t
   ;;
+  let of_string = Fun.id
+  let to_string = Fun.id
 end
 
 let initial_dir =
@@ -64,22 +71,22 @@ module Location = struct
                     Field
                       { name = "line_number"
                       ; kind = Required
-                      ; conv = int_of_sexp
+                      ; conv = Sexplib.Conv.int_of_sexp
                       ; rest =
                           Field
                             { name = "line_start"
                             ; kind = Required
-                            ; conv = int_of_sexp
+                            ; conv = Sexplib.Conv.int_of_sexp
                             ; rest =
                                 Field
                                   { name = "start_pos"
                                   ; kind = Required
-                                  ; conv = int_of_sexp
+                                  ; conv = Sexplib.Conv.int_of_sexp
                                   ; rest =
                                       Field
                                         { name = "end_pos"
                                         ; kind = Required
-                                        ; conv = int_of_sexp
+                                        ; conv = Sexplib.Conv.int_of_sexp
                                         ; rest = Empty
                                         }
                                   }
@@ -113,23 +120,23 @@ module Location = struct
            } ->
         let bnds__004_ = ([] : _ Stdlib.List.t) in
         let bnds__004_ =
-          let arg__014_ = sexp_of_int end_pos__013_ in
+          let arg__014_ = Sexplib.Conv.sexp_of_int end_pos__013_ in
           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "end_pos"; arg__014_ ] :: bnds__004_
            : _ Stdlib.List.t)
         in
         let bnds__004_ =
-          let arg__012_ = sexp_of_int start_pos__011_ in
+          let arg__012_ = Sexplib.Conv.sexp_of_int start_pos__011_ in
           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "start_pos"; arg__012_ ] :: bnds__004_
            : _ Stdlib.List.t)
         in
         let bnds__004_ =
-          let arg__010_ = sexp_of_int line_start__009_ in
+          let arg__010_ = Sexplib.Conv.sexp_of_int line_start__009_ in
           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "line_start"; arg__010_ ]
            :: bnds__004_
            : _ Stdlib.List.t)
         in
         let bnds__004_ =
-          let arg__008_ = sexp_of_int line_number__007_ in
+          let arg__008_ = Sexplib.Conv.sexp_of_int line_number__007_ in
           (Sexplib0.Sexp.List [ Sexplib0.Sexp.Atom "line_number"; arg__008_ ]
            :: bnds__004_
            : _ Stdlib.List.t)
@@ -152,12 +159,12 @@ module Location = struct
          else (
            match Name.compare a__015_.filename b__016_.filename with
            | 0 ->
-             (match compare_int a__015_.line_number b__016_.line_number with
+             (match Ppx_compare_lib.Builtin.compare_int a__015_.line_number b__016_.line_number with
               | 0 ->
-                (match compare_int a__015_.line_start b__016_.line_start with
+                (match Ppx_compare_lib.Builtin.compare_int a__015_.line_start b__016_.line_start with
                  | 0 ->
-                   (match compare_int a__015_.start_pos b__016_.start_pos with
-                    | 0 -> compare_int a__015_.end_pos b__016_.end_pos
+                   (match Ppx_compare_lib.Builtin.compare_int a__015_.start_pos b__016_.start_pos with
+                    | 0 -> Ppx_compare_lib.Builtin.compare_int a__015_.end_pos b__016_.end_pos
                     | n -> n)
                  | n -> n)
               | n -> n)
@@ -171,13 +178,13 @@ module Location = struct
   end
 
   include T
-  include Comparable.Make (T)
+  (* include Comparable.Make (T) *)
 
   let beginning_of_file filename =
     { filename; line_number = 1; line_start = 0; start_pos = 0; end_pos = 0 }
   ;;
 
-  let of_source_code_position (pos : Source_code_position.t) =
+  let of_source_code_position (pos : Lexing.position) =
     { filename = Name.of_string (Stdlib.Filename.basename pos.pos_fname)
     ; line_number = pos.pos_lnum
     ; line_start = pos.pos_bol
@@ -185,6 +192,8 @@ module Location = struct
     ; end_pos = pos.pos_cnum
     }
   ;;
+
+  let equal a b = compare a b = 0
 end
 
 module Digest : sig
@@ -207,9 +216,9 @@ end = struct
   type t = string [@@deriving_inline sexp_of, compare]
 
   let _ = fun (_ : t) -> ()
-  let sexp_of_t = (sexp_of_string : t -> Sexplib0.Sexp.t)
+  let sexp_of_t = (Sexplib.Conv.sexp_of_string : t -> Sexplib0.Sexp.t)
   let _ = sexp_of_t
-  let compare = (compare_string : t -> t -> int)
+  let compare = (Ppx_compare_lib.Builtin.compare_string : t -> t -> int)
   let _ = compare
 
   [@@@end]
@@ -227,4 +236,13 @@ end = struct
     done;
     s
   ;;
+end
+
+
+module Location_map = struct
+  include Map.Make(Location)
+  let to_alist map =
+    fold (fun key v acc -> (key, v) :: acc) map []
+
+
 end

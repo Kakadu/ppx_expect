@@ -1,4 +1,11 @@
-(library (name expect_test_common) (public_name ppx_expect.common)
- (synopsis "Shared parts for ppx_expect") (libraries base)
+(library
+ (name expect_test_common)
+ (public_name ppx_expect.common)
+ (synopsis "Shared parts for ppx_expect")
+ (libraries
+  ; TODO: eliminate following ones
+  sexplib
+  ppx_compare.runtime-lib)
  (preprocess no_preprocessing)
- (lint (pps ppx_base ppx_base_lint -apply=js_style,base_lint,type_conv)))
+ (lint
+  (pps ppx_base ppx_base_lint -apply=js_style,base_lint,type_conv)))

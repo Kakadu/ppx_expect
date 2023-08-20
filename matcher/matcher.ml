@@ -1,4 +1,4 @@
-open Base
+
 open Expect_test_common
 
 let bprintf = Printf.bprintf
@@ -8,15 +8,16 @@ module Saved_output = struct
     | One of string
     | Many_distinct of string list
 
+  module String_set = Set.Make(String)
   let of_nonempty_list_exn outputs =
     let _, rev_deduped_preserving_order =
-      List.fold
+      ListLabels.fold_left
         outputs
-        ~init:(Set.empty (module String), [])
+        ~init:(String_set.empty, [])
         ~f:(fun (as_set, as_list) output ->
-          if Set.mem as_set output
+          if String_set.mem  output as_set
           then as_set, as_list
-          else Set.add as_set output, output :: as_list)
+          else String_set.add  output as_set, output :: as_list)
     in
     match List.rev rev_deduped_preserving_order with
     | [] -> failwith "Saved_output.of_nonempty_list_exn got an empty list"
@@ -31,18 +32,19 @@ module Saved_output = struct
 
   let merge t1 t2 = of_nonempty_list_exn (to_list t1 @ to_list t2)
 end
-
+open Base
 module Test_outcome = struct
   module Expectations = struct
-    type t = Fmt.t Cst.t Expectation.t Map.M(File.Location).t
+    type t = Fmt.t Cst.t Expectation.t File.Location_map.t
     [@@deriving_inline compare, equal]
 
     let _ = fun (_ : t) -> ()
 
+
     let compare =
       (fun a__001_ b__002_ ->
-         Map.compare_m__t
-           (module File.Location)
+         File.Location_map.compare
+           (* (module File.Location) *)
            (fun a__003_ b__004_ ->
               Expectation.compare
                 (fun a__005_ b__006_ -> Cst.compare Fmt.compare a__005_ b__006_)
@@ -57,15 +59,16 @@ module Test_outcome = struct
 
     let equal =
       (fun a__009_ b__010_ ->
-         Map.equal_m__t
-           (module File.Location)
-           (fun a__011_ b__012_ ->
-              Expectation.equal
-                (fun a__013_ b__014_ -> Cst.equal Fmt.equal a__013_ b__014_)
+         File.Location_map.compare
+           (* (module File.Location) *)
+           (fun a__011_ b__012_ : int  ->
+              Expectation.compare
+                (fun a__013_ b__014_ -> Cst.compare Fmt.compare a__013_ b__014_)
                 a__011_
                 b__012_)
            a__009_
            b__010_
+           = 0
          : t -> t -> bool)
     ;;
 
@@ -77,7 +80,7 @@ module Test_outcome = struct
   type t =
     { expectations : Expectations.t
     ; uncaught_exn_expectation : Fmt.t Cst.t Expectation.t option
-    ; saved_output : Saved_output.t Map.M(File.Location).t
+    ; saved_output : Saved_output.t File.Location_map.t
     ; trailing_output : Saved_output.t
     ; uncaught_exn : Saved_output.t option
     ; upon_unreleasable_issue : Expect_test_config_types.Upon_unreleasable_issue.t
@@ -109,10 +112,13 @@ module Test_outcome = struct
     { expectations
     ; uncaught_exn_expectation
     ; saved_output =
-        Map.merge t.saved_output saved_output ~f:(fun ~key:_ -> function
-          | `Left x -> Some x
-          | `Right x -> Some x
-          | `Both (x, y) -> Some (Saved_output.merge x y))
+      File.Location_map.merge
+        (* Map.merge  *)
+         (fun _key left right -> match left, right with
+          | None , None -> None
+          | Some x, None | None, Some x -> Some x
+          | Some x, Some y -> Some (Saved_output.merge x y))
+          t.saved_output saved_output
     ; uncaught_exn =
         (match t.uncaught_exn, uncaught_exn with
          | None, None -> None
@@ -206,6 +212,7 @@ let evaluate_test
     List.intersperse (cr :: outputs) ~sep |> String.concat ~sep:"\n"
   in
   let corrections =
+
     Map.to_alist test.expectations
     |> List.filter_map ~f:(fun (location, (expect : Fmt.t Cst.t Expectation.t)) ->
       let correction_for actual =

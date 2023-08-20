@@ -8,21 +8,22 @@ module Collector_test_outcome = Expect_test_collector.Test_outcome
 type group =
   { filename : File.Name.t
   ; file_contents : string
-  ; tests : Matcher.Test_outcome.t Map.M(File.Location).t
+  ; tests : Matcher.Test_outcome.t File.Location_map.t
   }
 
 let convert_collector_test ~allow_output_patterns (test : Collector_test_outcome.t)
   : File.Location.t * Matcher.Test_outcome.t
   =
   let saved_output =
-    Map.of_alist_multi (module File.Location) test.saved_output
-    |> Map.map ~f:Matcher.Saved_output.of_nonempty_list_exn
+    (* let _ = Map.of_alist_multi (module File.Location) test.saved_output in *)
+    File.Location_map.of_alist_multi (File.Location.compare) test.saved_output
+    |> File.Location_map.map Matcher.Saved_output.of_nonempty_list_exn
   in
   let expectations =
     List.map test.expectations ~f:(fun (expect : Expectation.Raw.t) ->
       ( expect.extid_location
       , Expectation.map_pretty expect ~f:(Lexer.parse_pretty ~allow_output_patterns) ))
-    |> Map.of_alist_exn (module File.Location)
+    |> File.Location_map.of_alist_exn
   in
   let uncaught_exn =
     match test.uncaught_exn with
@@ -126,16 +127,35 @@ let create_group ~allow_output_patterns (filename, tests) =
       (D.to_string current_digest);
   let tests =
     List.map tests ~f:(convert_collector_test ~allow_output_patterns)
-    |> Map.of_alist_reduce (module File.Location) ~f:Matcher.Test_outcome.merge_exn
+    |> File.Location_map.of_alist_reduce ~f:Matcher.Test_outcome.merge_exn
   in
   { filename; file_contents; tests }
 ;;
 
+module String_map : sig
+include module type of Stdlib.Map.Make(String)
+  val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t
+  val to_alist : 'v t -> (key * 'v) list
+end = struct
+  include Stdlib.Map.Make(String)
+  (* val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t *)
+  let of_alist_multi cmp xs =
+    Stdlib.List.fold_left (fun acc (k,v) ->
+      (* TODO: use cmp *)
+      try let vs = find k acc in add k (v::vs) acc
+      with Stdlib.Not_found -> add k [] acc
+      ) empty xs
+
+  let to_alist map =
+    fold (fun key v acc -> (key, v) :: acc) map []
+end
+
 let convert_collector_tests ~allow_output_patterns tests : group list =
-  List.map tests ~f:(fun (test : Collector_test_outcome.t) ->
+  tests
+  |> Stdlib.List.map (fun (test : Collector_test_outcome.t) ->
     test.location.filename, test)
-  |> Map.of_alist_multi (module File.Name)
-  |> Map.to_alist
+  |> String_map.of_alist_multi String.compare
+  |> String_map.to_alist
   |> List.map ~f:(create_group ~allow_output_patterns)
 ;;
 
@@ -149,12 +169,12 @@ let process_group
   : Test_result.t
   =
   let bad_outcomes =
-    Map.fold tests ~init:[] ~f:(fun ~key:location ~data:test acc ->
+    File.Location_map.fold (fun location test acc ->
       match
         Matcher.evaluate_test ~file_contents ~location test ~allow_output_patterns
       with
       | Match -> acc
-      | Correction c -> c :: acc)
+      | Correction c -> c :: acc) tests  []
     |> List.rev
   in
   let filename = resolve_filename filename in
