@@ -98,7 +98,7 @@ let resolve_filename filename =
 
 let create_group ~allow_output_patterns (filename, tests) =
   let module D = File.Digest in
-  Stdlib.Printf.printf "tests length = %d\n" (List.length tests);
+  (* Stdlib.Printf.printf "tests length = %d, filename = %S\n" (List.length tests) filename; *)
   let expected_digest =
     match
       List.map tests ~f:(fun (t : Collector_test_outcome.t) -> t.file_digest)
@@ -142,9 +142,8 @@ end = struct
   (* val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t *)
   let of_alist_multi xs =
     Stdlib.List.fold_left (fun acc (k,v) ->
-      (* TODO: use cmp *)
       try let vs = find k acc in add k (v::vs) acc
-      with Stdlib.Not_found -> add k [] acc
+      with Stdlib.Not_found -> add k [v] acc
       ) empty xs
 
   let to_alist map =
@@ -152,6 +151,11 @@ end = struct
 end
 
 let convert_collector_tests ~allow_output_patterns tests : group list =
+  (* Stdlib.Printf.printf "col_outcome length = %d\n" (List.length tests);
+  Stdlib.List.iteri (fun i (test : Collector_test_outcome.t) ->
+    Stdlib.Printf.printf "  %d. %S. %d expectations\n"
+      i test.location.filename (List.length test.expectations);
+  ) tests; *)
   tests
   |> Stdlib.List.map (fun (test : Collector_test_outcome.t) ->
     test.location.filename, test)
