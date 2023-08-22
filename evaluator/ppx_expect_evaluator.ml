@@ -1,5 +1,5 @@
 open Base
-open Stdio
+(* open Stdio *)
 open Expect_test_common
 open Expect_test_matcher
 module Test_result = Ppx_inline_test_lib.Test_result
@@ -95,6 +95,48 @@ let resolve_filename filename =
   in
   File.Name.relative_to ~dir:relative_to filename
 ;;
+
+module In_channel = struct
+  let create ?(binary = true) file =
+    let flags = [ Open_rdonly ] in
+    let flags = if binary then Open_binary :: flags else flags in
+    Stdlib.open_in_gen flags 0o000 file
+  ;;
+  let with_file ?binary file ~f = Exn.protectx (create ?binary file) ~f ~finally:Stdlib.close_in
+
+  let input_all t =
+    (* We use 65536 because that is the size of OCaml's IO buffers. *)
+    let chunk_size = 65536 in
+    let buffer = Buffer.create chunk_size in
+    let rec loop () =
+      Stdlib.Buffer.add_channel buffer t chunk_size;
+      loop ()
+    in
+    try loop () with
+    | End_of_file -> Buffer.contents buffer
+;;
+  let read_all fname = with_file fname ~f:input_all
+end
+
+module Out_channel = struct
+  let create
+        ?(binary = true)
+        ?(append = false)
+        ?(fail_if_exists = false)
+        ?(perm = 0o666)
+        file
+    =
+    let flags = [ Open_wronly; Open_creat ] in
+    let flags = (if binary then Open_binary else Open_text) :: flags in
+    let flags = (if append then Open_append else Open_trunc) :: flags in
+    let flags = if fail_if_exists then Open_excl :: flags else flags in
+    Stdlib.open_out_gen flags perm file
+  ;;
+  let with_file ?binary ?append ?fail_if_exists ?perm file ~f =
+    Exn.protectx (create ?binary ?append ?fail_if_exists ?perm file) ~f ~finally:Stdlib.close_out
+  ;;
+  let write_all file ~data = with_file file ~f:(fun t -> Stdlib.output_string t data)
+end
 
 let create_group ~allow_output_patterns (filename, tests) =
   let module D = File.Digest in
