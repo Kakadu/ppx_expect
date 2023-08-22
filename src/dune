@@ -4,7 +4,6 @@
  (kind ppx_rewriter)
  (ppx_runtime_libraries ppx_expect.collector ppx_expect.config)
  (libraries
-  base
   expect_test_common
   ppx_expect_payload
   ppxlib

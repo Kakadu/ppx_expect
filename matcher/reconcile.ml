@@ -1,5 +1,3 @@
-open! Base
-open! Import
 open Expect_test_common
 open Sexplib0.Sexp_conv
 
@@ -122,7 +120,7 @@ let rec corrected_rev
   match expect_lines, actual_lines with
   | [], [] -> acc
   | [], actual_lines ->
-    List.fold actual_lines ~init:acc ~f:(fun acc x ->
+    ListLabels.fold_left actual_lines ~init:acc ~f:(fun acc x ->
       literal_line x ~allow_output_patterns :: acc)
   | _, [] -> acc
   | expect :: expect_lines, actual :: actual_lines ->

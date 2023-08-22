@@ -2,7 +2,6 @@
  (name ppx_expect_evaluator)
  (public_name ppx_expect.evaluator)
  (libraries
-  base
   expect_test_common
   expect_test_collector
   expect_test_matcher

@@ -1,5 +1,4 @@
-open! Base
-open Import
+
 open Ppx_compare_lib.Builtin
 open Sexplib0.Sexp_conv
 

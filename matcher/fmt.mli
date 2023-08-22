@@ -1,8 +1,5 @@
 (** Representation of parsed [%expect] lines *)
 
-open! Base
-open Base.Exported_for_specific_uses (* for [Ppx_compare_lib] *)
-
 type t =
   | Regexp of string
   | Glob of string

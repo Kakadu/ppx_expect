@@ -32,7 +32,7 @@ module Saved_output = struct
 
   let merge t1 t2 = of_nonempty_list_exn (to_list t1 @ to_list t2)
 end
-open Base
+
 module Test_outcome = struct
   module Expectations = struct
     type t = Fmt.t Cst.t Expectation.t File.Location_map.t
@@ -156,10 +156,10 @@ module Test_correction = struct
   let map_corrections t ~f =
     { location = t.location
     ; corrections =
-        List.map t.corrections ~f:(fun (e, c) ->
+        ListLabels.map t.corrections ~f:(fun (e, c) ->
           ( e
           , match c with
-          | Collector_never_triggered -> c
+          | Node_correction.Collector_never_triggered -> c
           | Correction body -> Correction (Expectation.Body.map_pretty body ~f) ))
     ; uncaught_exn =
         (match t.uncaught_exn with
@@ -175,7 +175,7 @@ module Test_correction = struct
   let compare_locations a b = compare a.location.line_number b.location.line_number
 
   let make ~location ~corrections ~uncaught_exn ~trailing_output : t Reconcile.Result.t =
-    if List.is_empty corrections
+    if Utils.list_is_empty corrections
     && (match (trailing_output : _ Reconcile.Result.t) with
         | Match -> true
         | Correction _ -> false)
@@ -191,7 +191,7 @@ end
 let indentation_at file_contents (loc : File.Location.t) =
   let n = ref loc.line_start in
   while Char.equal file_contents.[!n] ' ' do
-    Int.incr n
+    Stdlib.incr n
   done;
   !n - loc.line_start
 ;;
@@ -208,13 +208,13 @@ let evaluate_test
         test.upon_unreleasable_issue
     in
     let cr = Printf.sprintf "(* %sexpect_test: %s *)" prefix cr_body in
-    let sep = String.init (String.length cr) ~f:(fun _ -> '=') in
-    List.intersperse (cr :: outputs) ~sep |> String.concat ~sep:"\n"
+    let sep = StringLabels.init (String.length cr) ~f:(fun _ -> '=') in
+    Utils.list_intersperse (cr :: outputs) ~sep |> String.concat "\n"
   in
   let corrections =
 
     File.Location_map.to_alist test.expectations
-    |> List.filter_map ~f:(fun (location, (expect : Fmt.t Cst.t Expectation.t)) ->
+    |> ListLabels.filter_map ~f:(fun (location, (expect : Fmt.t Cst.t Expectation.t)) ->
       let correction_for actual =
         let default_indent = indentation_at file_contents expect.body_location in
         match
@@ -237,7 +237,7 @@ let evaluate_test
       | (One actual) -> correction_for actual
       | (Many_distinct outputs) ->
         let matches_expectation output = Option.is_none (correction_for output) in
-        if List.for_all outputs ~f:matches_expectation
+        if ListLabels.for_all outputs ~f:matches_expectation
         then None
         else
           cr_for_multiple_outputs
@@ -304,7 +304,7 @@ type mode =
   | Inline_expect_test
   | Toplevel_expect_test
 
-let output_slice buf s a b = Buffer.add_string buf (String.sub s ~pos:a ~len:(b - a))
+let output_slice buf s a b = Buffer.add_string buf (StringLabels.sub s ~pos:a ~len:(b - a))
 
 let is_space = function
   | '\t' | '\011' | '\012' | '\r' | ' ' | '\n' -> true
@@ -320,7 +320,7 @@ let rec output_semi_colon_if_needed buf file_contents pos =
     | _ -> Buffer.add_char buf ';')
 ;;
 
-let split_lines s = String.split s ~on:'\n'
+let split_lines s = Utils.split_on_chars s ~on:['\n']
 
 let output_corrected buf ~file_contents ~mode test_corrections =
   let id_and_string_of_body : _ Expectation.Body.t -> string * string = function
@@ -335,13 +335,13 @@ let output_corrected buf ~file_contents ~mode test_corrections =
       bprintf
         buf
         "\"%s\""
-        (String.concat ~sep:"\n" (split_lines body |> List.map ~f:String.escaped))
+        (String.concat "\n"  (split_lines body |> ListLabels.map ~f:String.escaped))
     | Some tag ->
       let tag = Choose_tag.choose ~default:tag body in
       bprintf buf "{%s|%s|%s}" tag body tag
   in
   let ofs =
-    List.fold_left
+    ListLabels.fold_left
       test_corrections
       ~init:0
       ~f:(fun ofs (test_correction : Test_correction.t) ->
@@ -354,31 +354,33 @@ let output_corrected buf ~file_contents ~mode test_corrections =
                extension point, so we have to find the square brackets ourselves :( *)
             let start = ref e.extid_location.start_pos in
             while not (Char.equal file_contents.[!start] '[') do
-              if Int.( >= ) ofs !start
+              if ofs >= !start
               then
-                raise_s
+                failwith "Cannot find '[' marking the start of [%expect.uncaught_exn]"
+                (* raise_s
                   (Sexp.message
                      "Cannot find '[' marking the start of [%expect.uncaught_exn]"
                      [ "ofs", Int.sexp_of_t ofs
                      ; "start", Int.sexp_of_t e.extid_location.start_pos
-                     ]);
-              Int.decr start
+                     ]) *);
+              Stdlib.decr start
             done;
             while !start - 1 > ofs && is_space file_contents.[!start - 1] do
-              Int.decr start
+              Stdlib.decr start
             done;
             let file_len = String.length file_contents in
             let stop = ref e.body_location.end_pos in
             while !stop < file_len && not (Char.equal file_contents.[!stop] ']') do
-              Int.incr stop
+              Stdlib.incr stop
             done;
-            if Int.( >= ) !stop file_len
+            if  !stop >= file_len
             then
-              raise_s
+              failwith "Cannot find ']' marking the end of [%expect.uncaught_exn]";
+              (* raise_s
                 (Sexp.message
                    "Cannot find ']' marking the end of [%expect.uncaught_exn]"
-                   [ "stop", Int.sexp_of_t e.body_location.end_pos ]);
-            Int.incr stop;
+                   [ "stop", Int.sexp_of_t e.body_location.end_pos ]); *)
+            Stdlib.incr stop;
             let test_correction =
               { test_correction with
                 location = { test_correction.location with end_pos = !start }
@@ -388,7 +390,7 @@ let output_corrected buf ~file_contents ~mode test_corrections =
           | Match | Without_expectation _ | Correction _ -> test_correction, None
         in
         let ofs =
-          List.fold_left
+          ListLabels.fold_left
             test_correction.corrections
             ~init:ofs
             ~f:(fun ofs (e, correction) ->
@@ -425,7 +427,7 @@ let output_corrected buf ~file_contents ~mode test_corrections =
                let indent = loc.start_pos - loc.line_start + 2 in
                bprintf buf "\n%*s[%%%s " indent "" id
              | Toplevel_expect_test ->
-               if loc.end_pos = 0 || Char.( <> ) file_contents.[loc.end_pos - 1] '\n'
+               if loc.end_pos = 0 || not (Char.(equal ) file_contents.[loc.end_pos - 1] '\n')
                then Buffer.add_char buf '\n';
                bprintf buf "[%%%%%s" id);
             output_body buf (Some "") body;
@@ -466,6 +468,6 @@ let get_contents_for_corrected_file ~file_contents ~mode test_corrections =
     buf
     ~file_contents
     ~mode
-    (List.sort test_corrections ~compare:Test_correction.compare_locations);
+    (ListLabels.sort test_corrections ~cmp:Test_correction.compare_locations);
   Buffer.contents buf
 ;;

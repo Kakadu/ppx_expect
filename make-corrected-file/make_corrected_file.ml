@@ -1,39 +1,19 @@
-open! Base
 open! Import
+open! Utils
+
+type error = [ `Changes_found ]
 
 let chop_if_exists ~ancestor ~from:path =
-  String.chop_prefix_if_exists path ~prefix:(ancestor ^ "/")
+  let prefix = (ancestor ^ "/") in
+  let plen = String.length prefix in
+  if Stdlib.String.starts_with ~prefix path
+  then Stdlib.String.sub path plen (String.length path - plen)
+else path
+  (* String.chop_prefix_if_exists path ~prefix:path *)
 ;;
 
-module In_channel = struct
-  include Stdlib.In_channel
-  let create ?(binary = true) file =
-    let flags = [ Open_rdonly ] in
-    let flags = if binary then Open_binary :: flags else flags in
-    Stdlib.open_in_gen flags 0o000 file
-  ;;
-  let with_file ?binary file ~f = Exn.protectx (create ?binary file) ~f ~finally:close
-end
 
-module Out_channel = struct
-  include Stdlib.Out_channel
-  let create
-        ?(binary = true)
-        ?(append = false)
-        ?(fail_if_exists = false)
-        ?(perm = 0o666)
-        file
-    =
-    let flags = [ Open_wronly; Open_creat ] in
-    let flags = (if binary then Open_binary else Open_text) :: flags in
-    let flags = (if append then Open_append else Open_trunc) :: flags in
-    let flags = if fail_if_exists then Open_excl :: flags else flags in
-    Stdlib.open_out_gen flags perm file
-  let with_file ?binary ?append ?fail_if_exists ?perm file ~f =
-    Exn.protectx (create ?binary ?append ?fail_if_exists ?perm file) ~f ~finally:close
-  ;;
-  let write_all file ~data = with_file file ~f:(fun t -> output_string t data)
-end
+
 let f
       ?(use_dot_patdiff = false)
       ?corrected_path
@@ -45,7 +25,7 @@ let f
       ()
   =
   let prev_contents = In_channel.with_file path ~f:Stdlib.In_channel.input_all in
-  match String.( = ) prev_contents next_contents with
+  match String.equal prev_contents next_contents with
   | true ->
     (* It's possible for stale .corrected files to linger and ideally we would delete them
        here, but this probably isn't worth fixing since it's mooted by dune, which puts
@@ -59,7 +39,7 @@ let f
     Out_channel.write_all corrected_path ~data:next_contents;
     let extra_patdiff_args =
       let default_configs =
-        match use_dot_patdiff && Option.is_none (Sys.getenv "TESTING_FRAMEWORK") with
+        match use_dot_patdiff && Option.is_none (Sys.getenv_opt "TESTING_FRAMEWORK") with
         | true -> []
         | false -> [ "-default" ]
       in
@@ -70,7 +50,7 @@ let f
          where the rule and the test are in different directories. *)
       let prefix =
         match diff_path_prefix with
-        | Some prefix -> String.rstrip ~drop:(Char.equal '/') prefix ^ "/"
+        | Some prefix -> Utils.string_rstrip ~drop:(Char.equal '/') prefix ^ "/"
         | None -> ""
       in
       let alt_old = [ "-alt-old"; prefix ^ chop_if_exists ~ancestor:cwd ~from:path ] in
@@ -86,5 +66,5 @@ let f
       ~file1:path
       ~file2:corrected_path
       ();
-    Error (Error.of_string "Changes found.")
+    Error `Changes_found
 ;;

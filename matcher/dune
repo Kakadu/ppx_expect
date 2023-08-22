@@ -2,8 +2,8 @@
  (name expect_test_matcher)
  (public_name ppx_expect.matcher)
  (libraries
-  base
   re
+  utils
   expect_test_common
   expect_test_config_types
   ppx_inline_test.runtime-lib)

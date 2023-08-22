@@ -1,4 +1,6 @@
-open! Base
+
+
+type error = [ `Changes_found ]
 
 (** [f ~next_contents ~path ()] compares the contents of [path] against [next_contents].
     If the contents are unchanged, [f] returns [Ok ()]. If they are changed, it writes
@@ -17,4 +19,4 @@ val f
   -> next_contents:string
   -> path:string
   -> unit
-  -> unit Or_error.t
+  -> (unit, [> error]) Result.t

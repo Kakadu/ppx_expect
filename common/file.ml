@@ -1,6 +1,3 @@
-(* open! Base *)
-(* open Import *)
-
 module Name : sig
   type t = string [@@deriving_inline sexp, compare]
 

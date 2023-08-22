@@ -1,7 +1,5 @@
 (** Determine whether a test's output matches its expected output. *)
 
-open! Base
-open Base.Exported_for_specific_uses (* for [Ppx_compare_lib] *)
 open Expect_test_common
 
 module Result : sig

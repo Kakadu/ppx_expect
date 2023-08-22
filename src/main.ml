@@ -1,5 +1,4 @@
 open Expect_test_common
-open Base
 open Ppxlib
 open Ast_builder.Default
 
@@ -26,7 +25,7 @@ let eoption ~loc x =
   | Some e -> pexp_construct ~loc (Located.mk ~loc (lident "Some")) (Some e)
 ;;
 
-let estring_option ~loc x = eoption ~loc (Option.map x ~f:(estring ~loc))
+let estring_option ~loc x = eoption ~loc (Option.map (estring ~loc)  x)
 
 let lift_expectation ~loc ({ tag; body; extid_location; body_location } : _ Expectation.t)
   =
@@ -80,8 +79,19 @@ let replace_expects =
   end
 ;;
 
+module Hashtbl = struct
+include Hashtbl
+let find_or_add tbl key ~default =
+  match find tbl key with
+  | v -> v
+  | exception Not_found ->
+    let v = default () in
+    add tbl key v;
+    v
+end
+
 let file_digest =
-  let cache = Hashtbl.create (module String) ~size:32 in
+  let cache = Hashtbl.create 32 in
   fun fname ->
     Hashtbl.find_or_add cache fname ~default:(fun () ->
       Stdlib.Digest.file fname |> Stdlib.Digest.to_hex)
@@ -90,13 +100,14 @@ let file_digest =
 let rewrite_test_body ~descr ~tags ~uncaught_exn ~called_by_merlin pstr_loc body =
   let loc = pstr_loc in
   let expectations =
-    List.map (collect_expectations#expression body []) ~f:(fun (loc, expect_extension) ->
+    ListLabels.map (collect_expectations#expression body []) ~f:(fun (loc, expect_extension) ->
       lift_expectation ~loc expect_extension)
     |> elist ~loc
   in
   let uncaught_exn =
-    Option.map uncaught_exn ~f:(fun (loc, expectation) ->
+    Option.map (fun (loc, expectation) ->
       lift_expectation ~loc expectation)
+      uncaught_exn
     |> eoption ~loc
   in
   let body = replace_expects#expression body in
@@ -115,7 +126,7 @@ let rewrite_test_body ~descr ~tags ~uncaught_exn ~called_by_merlin pstr_loc body
       ~location:[%e lift_location ~loc (Ppx_expect_payload.transl_loc pstr_loc)]
       ~absolute_filename:[%e estring ~loc absolute_filename]
       ~description:[%e estring_option ~loc descr]
-      ~tags:[%e elist ~loc (List.map tags ~f:(estring ~loc))]
+      ~tags:[%e elist ~loc (List.map (estring ~loc) tags)]
       ~expectations:[%e expectations]
       ~uncaught_exn_expectation:[%e uncaught_exn]
       ~inline_test_config:(module Inline_test_config)
@@ -167,7 +178,10 @@ module Has_tests =
     (struct
       let name = "ppx_expect.has_tests"
     end)
-    (Bool)
+    (struct type t = bool
+      let sexp_of_t = Sexplib.Conv.sexp_of_bool
+      let t_of_sexp = Sexplib.Conv.bool_of_sexp
+    end )
 
 let expect_test =
   Extension.V3.declare_inline

@@ -1,8 +1,3 @@
-(* open! Base *)
-(*
-open Base.Exported_for_specific_uses (* for [Ppx_compare_lib] *)
-*)
-
 module Name : sig
   (** Strongly-typed filename *)
   type t = string [@@deriving_inline sexp, compare]

@@ -1,5 +1,4 @@
-open Base
-(* open Stdio *)
+open Utils
 open Expect_test_common
 open Expect_test_matcher
 module Test_result = Ppx_inline_test_lib.Test_result
@@ -20,7 +19,7 @@ let convert_collector_test ~allow_output_patterns (test : Collector_test_outcome
     |> File.Location_map.map Matcher.Saved_output.of_nonempty_list_exn
   in
   let expectations =
-    List.map test.expectations ~f:(fun (expect : Expectation.Raw.t) ->
+    ListLabels.map test.expectations ~f:(fun (expect : Expectation.Raw.t) ->
       ( expect.extid_location
       , Expectation.map_pretty expect ~f:(Lexer.parse_pretty ~allow_output_patterns) ))
     |> File.Location_map.of_alist_exn
@@ -55,12 +54,13 @@ let convert_collector_test ~allow_output_patterns (test : Collector_test_outcome
     | Some uncaught_exn, trailing_output ->
       ( Some
           (String.concat
-             ~sep:"\n"
+             "\n"
              [ uncaught_exn; "Trailing output"; "---------------"; trailing_output ])
       , "" )
   in
   let uncaught_exn_expectation =
-    Option.map test.uncaught_exn_expectation ~f:(fun expect ->
+    test.uncaught_exn_expectation
+    |> Option.map (fun expect ->
       Expectation.map_pretty expect ~f:(Lexer.parse_pretty ~allow_output_patterns))
   in
   ( test.location
@@ -68,7 +68,7 @@ let convert_collector_test ~allow_output_patterns (test : Collector_test_outcome
     ; saved_output
     ; trailing_output = Matcher.Saved_output.of_nonempty_list_exn [ trailing_output ]
     ; uncaught_exn =
-        Option.map uncaught_exn ~f:(fun s ->
+        uncaught_exn |> Option.map (fun s ->
           Matcher.Saved_output.of_nonempty_list_exn [ s ])
     ; uncaught_exn_expectation
     ; upon_unreleasable_issue = test.upon_unreleasable_issue
@@ -86,65 +86,26 @@ let resolve_filename filename =
       then (
         let initial_dir = File.initial_dir () in
         (* Simplification for the common case where [root] is of the form [(../)*..] *)
-        let l = String.split_on_chars root ~on:dir_seps in
-        if List.for_all l ~f:(String.equal Stdlib.Filename.parent_dir_name)
+        let l = Utils.split_on_chars root ~on:dir_seps in
+        if ListLabels.for_all l ~f:(String.equal Stdlib.Filename.parent_dir_name)
         then
-          List.fold_left l ~init:initial_dir ~f:(fun dir _ -> Stdlib.Filename.dirname dir)
+          ListLabels.fold_left l ~init:initial_dir ~f:(fun dir _ -> Stdlib.Filename.dirname dir)
         else Stdlib.Filename.concat initial_dir root)
       else root
   in
   File.Name.relative_to ~dir:relative_to filename
 ;;
 
-module In_channel = struct
-  let create ?(binary = true) file =
-    let flags = [ Open_rdonly ] in
-    let flags = if binary then Open_binary :: flags else flags in
-    Stdlib.open_in_gen flags 0o000 file
-  ;;
-  let with_file ?binary file ~f = Exn.protectx (create ?binary file) ~f ~finally:Stdlib.close_in
 
-  let input_all t =
-    (* We use 65536 because that is the size of OCaml's IO buffers. *)
-    let chunk_size = 65536 in
-    let buffer = Buffer.create chunk_size in
-    let rec loop () =
-      Stdlib.Buffer.add_channel buffer t chunk_size;
-      loop ()
-    in
-    try loop () with
-    | End_of_file -> Buffer.contents buffer
-;;
-  let read_all fname = with_file fname ~f:input_all
-end
 
-module Out_channel = struct
-  let create
-        ?(binary = true)
-        ?(append = false)
-        ?(fail_if_exists = false)
-        ?(perm = 0o666)
-        file
-    =
-    let flags = [ Open_wronly; Open_creat ] in
-    let flags = (if binary then Open_binary else Open_text) :: flags in
-    let flags = (if append then Open_append else Open_trunc) :: flags in
-    let flags = if fail_if_exists then Open_excl :: flags else flags in
-    Stdlib.open_out_gen flags perm file
-  ;;
-  let with_file ?binary ?append ?fail_if_exists ?perm file ~f =
-    Exn.protectx (create ?binary ?append ?fail_if_exists ?perm file) ~f ~finally:Stdlib.close_out
-  ;;
-  let write_all file ~data = with_file file ~f:(fun t -> Stdlib.output_string t data)
-end
 
 let create_group ~allow_output_patterns (filename, tests) =
   let module D = File.Digest in
   (* Stdlib.Printf.printf "tests length = %d, filename = %S\n" (List.length tests) filename; *)
   let expected_digest =
     match
-      List.map tests ~f:(fun (t : Collector_test_outcome.t) -> t.file_digest)
-      |> List.dedup_and_sort ~compare:D.compare
+      ListLabels.map tests ~f:(fun (t : Collector_test_outcome.t) -> t.file_digest)
+      |> dedup_and_sort ~compare:D.compare
     with
     | [ digest ] -> digest
     | [] -> assert false
@@ -153,9 +114,10 @@ let create_group ~allow_output_patterns (filename, tests) =
         failwith
         "Expect tests make inconsistent assumption about file \"%s\" %s"
         (File.Name.to_string filename)
-        (Sexp.to_string_hum (List.sexp_of_t D.sexp_of_t digests))
+        (Sexplib0.Sexp.to_string_hum
+          (Sexplib.Conv.sexp_of_list D.sexp_of_t digests))
   in
-  let file_contents = In_channel.read_all (resolve_filename filename) in
+  let file_contents = Utils.In_channel.read_all (resolve_filename filename) in
   let current_digest =
     Stdlib.Digest.string file_contents |> Stdlib.Digest.to_hex |> D.of_string
   in
@@ -169,7 +131,7 @@ let create_group ~allow_output_patterns (filename, tests) =
       (D.to_string expected_digest)
       (D.to_string current_digest);
   let tests =
-    List.map tests ~f:(convert_collector_test ~allow_output_patterns)
+    ListLabels.map tests ~f:(convert_collector_test ~allow_output_patterns)
     |> File.Location_map.of_alist_reduce ~f:Matcher.Test_outcome.merge_exn
   in
   { filename; file_contents; tests }
@@ -203,7 +165,7 @@ let convert_collector_tests ~allow_output_patterns tests : group list =
     test.location.filename, test)
   |> String_map.of_alist_multi
   |> String_map.to_alist
-  |> List.map ~f:(create_group ~allow_output_patterns)
+  |> ListLabels.map ~f:(create_group ~allow_output_patterns)
 ;;
 
 let process_group
@@ -267,7 +229,7 @@ let process_group
               ".corrected.tmp"
               ~temp_dir:(Stdlib.Filename.dirname filename)
           in
-          let (Ok () | Error (_ : Error.t)) =
+          let (Ok () | Error (_ : Make_corrected_file.error)) =
             Make_corrected_file.f
               ~corrected_path:tmp_corrected
               ~use_color
@@ -289,7 +251,7 @@ let evaluate_tests
       ~allow_output_patterns
   =
   convert_collector_tests (Expect_test_collector.tests_run ()) ~allow_output_patterns
-  |> List.map ~f:(fun group ->
+  |> ListLabels.map ~f:(fun group ->
     match
       process_group
         ~use_color
@@ -299,15 +261,17 @@ let evaluate_tests
         ~allow_output_patterns
         group
     with
-    | exception exn ->
-      let bt = Stdlib.Printexc.get_raw_backtrace () in
-      raise_s
-        (Sexp.message
+    | exception _exn ->
+      let _bt = Stdlib.Printexc.get_raw_backtrace () in
+      failwith "Expect test evaluator bug..."
+      (* TODO: make error message more pretty *)
+      (* raise_s
+        (Sexplib0.Sexp.message
            "Expect test evaluator bug"
-           [ "exn", sexp_of_exn exn
+           [ "exn", Sexplib0.Conv.sexp_of_exn exn
            ; "backtrace", Atom (Stdlib.Printexc.raw_backtrace_to_string bt)
            ; "filename", File.Name.sexp_of_t group.filename
-           ])
+           ]) *)
     | res -> res)
   |> Test_result.combine_all
 ;;

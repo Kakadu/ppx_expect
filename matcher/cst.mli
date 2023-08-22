@@ -7,8 +7,6 @@
     In the following names, blank means ' ' or '\t', while space means blank or newline.
 *)
 
-open! Base
-open Base.Exported_for_specific_uses (* for [Ppx_compare_lib] *)
 
 module Line : sig
   type 'a not_blank =
