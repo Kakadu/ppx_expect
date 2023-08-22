@@ -244,5 +244,30 @@ module Location_map = struct
   let to_alist map =
     fold (fun key v acc -> (key, v) :: acc) map []
 
+  let of_alist_multi: (key * 'b) list -> 'b list t = fun xs ->
+    List.fold_left (fun acc (key, v) ->
+      match find key acc with
+      | vs -> add key (v::vs) acc
+      | exception Not_found -> add key [v] acc
+      )
+      empty
+      xs
 
+  let of_alist_exn: (key * 'b) list -> 'b t = fun xs ->
+    List.fold_left (fun acc (k,v) ->
+      if mem k acc
+      then failwith "Bad argument: duplicate keys"
+      else add k v acc
+      )
+      empty
+      xs
+
+  let of_alist_reduce: (key * 'b) list -> f:('b -> 'b -> 'b) -> 'b t = fun xs ~f ->
+    List.fold_left (fun acc (k,v) ->
+      if mem k acc
+      then add k (f v (find k acc)) acc
+      else add k v acc
+      )
+      empty
+      xs
 end

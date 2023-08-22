@@ -75,7 +75,7 @@ end
 module Location_map : sig
   include (module type of Map.Make(Location))
   val to_alist : 'v t -> (key * 'v) list
-  val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t
+  val of_alist_multi: (key * 'b) list -> 'b list t
   val of_alist_exn: (key * 'b) list -> 'b t
 
   (** Creates a map from an association list with unique keys, raising an exception if duplicate 'a keys are found. *)

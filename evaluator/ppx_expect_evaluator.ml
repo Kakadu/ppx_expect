@@ -16,7 +16,7 @@ let convert_collector_test ~allow_output_patterns (test : Collector_test_outcome
   =
   let saved_output =
     (* let _ = Map.of_alist_multi (module File.Location) test.saved_output in *)
-    File.Location_map.of_alist_multi (File.Location.compare) test.saved_output
+    File.Location_map.of_alist_multi test.saved_output
     |> File.Location_map.map Matcher.Saved_output.of_nonempty_list_exn
   in
   let expectations =
@@ -98,6 +98,7 @@ let resolve_filename filename =
 
 let create_group ~allow_output_patterns (filename, tests) =
   let module D = File.Digest in
+  Stdlib.Printf.printf "tests length = %d\n" (List.length tests);
   let expected_digest =
     match
       List.map tests ~f:(fun (t : Collector_test_outcome.t) -> t.file_digest)
@@ -134,12 +135,12 @@ let create_group ~allow_output_patterns (filename, tests) =
 
 module String_map : sig
 include module type of Stdlib.Map.Make(String)
-  val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t
+  val of_alist_multi: (key * 'b) list -> 'b list t
   val to_alist : 'v t -> (key * 'v) list
 end = struct
   include Stdlib.Map.Make(String)
   (* val of_alist_multi: (key -> key -> int) -> (key * 'b) list -> 'b list t *)
-  let of_alist_multi cmp xs =
+  let of_alist_multi xs =
     Stdlib.List.fold_left (fun acc (k,v) ->
       (* TODO: use cmp *)
       try let vs = find k acc in add k (v::vs) acc
@@ -154,7 +155,7 @@ let convert_collector_tests ~allow_output_patterns tests : group list =
   tests
   |> Stdlib.List.map (fun (test : Collector_test_outcome.t) ->
     test.location.filename, test)
-  |> String_map.of_alist_multi String.compare
+  |> String_map.of_alist_multi
   |> String_map.to_alist
   |> List.map ~f:(create_group ~allow_output_patterns)
 ;;

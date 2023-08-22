@@ -213,7 +213,7 @@ let evaluate_test
   in
   let corrections =
 
-    Map.to_alist test.expectations
+    File.Location_map.to_alist test.expectations
     |> List.filter_map ~f:(fun (location, (expect : Fmt.t Cst.t Expectation.t)) ->
       let correction_for actual =
         let default_indent = indentation_at file_contents expect.body_location in
@@ -228,14 +228,14 @@ let evaluate_test
         | Match -> None
         | Correction c -> Some (expect, Test_correction.Node_correction.Correction c)
       in
-      match Map.find test.saved_output location with
-      | None ->
+      match File.Location_map.find location test.saved_output  with
+      | exception Stdlib.Not_found ->
         (match expect.body with
          | Unreachable | Output -> None
          | Exact _ | Pretty _ ->
            Some (expect, Test_correction.Node_correction.Collector_never_triggered))
-      | Some (One actual) -> correction_for actual
-      | Some (Many_distinct outputs) ->
+      | (One actual) -> correction_for actual
+      | (Many_distinct outputs) ->
         let matches_expectation output = Option.is_none (correction_for output) in
         if List.for_all outputs ~f:matches_expectation
         then None
