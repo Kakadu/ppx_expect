@@ -1,6 +1,6 @@
 (library
  (name expect_test_collector)
- (public_name ppx_expect.collector)
+ (public_name ppx_expect_nobase.collector)
  (synopsis "Runtime library for ppx_expect")
  (libraries
   expect_test_common

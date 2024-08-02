@@ -1,6 +1,6 @@
 (library
  (name ppx_expect)
- (public_name ppx_expect)
+ (public_name ppx_expect_nobase)
  (kind ppx_rewriter)
  (ppx_runtime_libraries ppx_expect.collector ppx_expect.config)
  (libraries

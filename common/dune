@@ -1,6 +1,6 @@
 (library
  (name expect_test_common)
- (public_name ppx_expect.common)
+ (public_name ppx_expect_nobase.common)
  (synopsis "Shared parts for ppx_expect")
  (libraries
   ; TODO: eliminate following ones

@@ -1,6 +1,6 @@
 (library
  (name ppx_expect_evaluator)
- (public_name ppx_expect.evaluator)
+ (public_name ppx_expect_nobase.evaluator)
  (libraries
   expect_test_common
   expect_test_collector

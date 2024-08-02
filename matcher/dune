@@ -1,6 +1,6 @@
 (library
  (name expect_test_matcher)
- (public_name ppx_expect.matcher)
+ (public_name ppx_expect_nobase.matcher)
  (libraries
   re
   utils
