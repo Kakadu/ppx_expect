@@ -1,5 +1,3 @@
-open! Base
-
 (** [f ~next_contents ~path ()] compares the contents of [path] against [next_contents].
     If the contents are unchanged, [f] returns [Ok ()]. If they are changed, it writes
     [next_contents] to [corrected_path], emits a build error, and returns [Error _]. The
@@ -17,4 +15,4 @@ val f
   -> next_contents:string
   -> path:string
   -> unit
-  -> unit Or_error.t
+  -> (unit, string) Result.t

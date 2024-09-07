@@ -1,7 +1,7 @@
 open! Base
 open Ppxlib
 open Ast_builder.Default
-open Ppx_expect_runtime
+open Ppx_expect_nobase_runtime
 
 let strict_indent = ref false
 
@@ -21,12 +21,12 @@ module Expr = struct
          match delimiter with
          | T Quote -> [%expr T Quote]
          | T (Tag tag) -> [%expr T (Tag [%e estring ~loc tag])]]
-        : Ppx_expect_runtime.Delimiter.t)]
+       : Ppx_expect_nobase_runtime.Delimiter.t)]
   ;;
 
   let id ~loc id =
     [%expr
-      Ppx_expect_runtime.Expectation_id.of_int_exn
+      Ppx_expect_nobase_runtime.Expectation_id.of_int_exn
         [%e eint ~loc (Expectation_id.to_int_exn id)]]
   ;;
 
@@ -49,11 +49,13 @@ module Expr = struct
 
   let flexibility_of_strictness ~loc =
     if !strict_indent
-    then [%expr Ppx_expect_runtime.Expect_node_formatting.Flexibility.Exactly_formatted]
+    then
+      [%expr
+        Ppx_expect_nobase_runtime.Expect_node_formatting.Flexibility.Exactly_formatted]
     else
       [%expr
-        Ppx_expect_runtime.Expect_node_formatting.Flexibility.Flexible_modulo
-          Ppx_expect_runtime.Expect_node_formatting.default]
+        Ppx_expect_nobase_runtime.Expect_node_formatting.Flexibility.Flexible_modulo
+          Ppx_expect_nobase_runtime.Expect_node_formatting.default]
   ;;
 end
 
@@ -79,7 +81,7 @@ module Expectation_node = struct
     let qualify_name node_name =
       pexp_ident
         ~loc
-        (Located.lident ~loc ("Ppx_expect_runtime.Test_node.Create." ^ node_name))
+        (Located.lident ~loc ("Ppx_expect_nobase_runtime.Test_node.Create." ^ node_name))
     in
     let make_expect_node node_name { located_payload; node_loc } =
       [%expr
@@ -133,7 +135,7 @@ module Parsed_node = struct
       Expression
       (Pattern.maybe_string ())
       (fun ~located_payload node_loc ->
-      Expectation_node (Expectation_id.mint (), Expect { located_payload; node_loc }))
+         Expectation_node (Expectation_id.mint (), Expect { located_payload; node_loc }))
   ;;
 
   let expect_exact =
@@ -142,7 +144,8 @@ module Parsed_node = struct
       Expression
       (Pattern.maybe_string ())
       (fun ~located_payload node_loc ->
-      Expectation_node (Expectation_id.mint (), Expect_exact { located_payload; node_loc }))
+         Expectation_node
+           (Expectation_id.mint (), Expect_exact { located_payload; node_loc }))
   ;;
 
   let expect_output =
@@ -156,7 +159,7 @@ module Parsed_node = struct
       Expression
       (Pattern.empty ())
       (fun compact_loc ->
-      Expectation_node (Expectation_id.mint (), Expect_unreachable compact_loc))
+         Expectation_node (Expectation_id.mint (), Expect_unreachable compact_loc))
   ;;
 
   let expectations = [ expect; expect_exact; expect_output; expect_unreachable ]
@@ -204,11 +207,11 @@ let transform_let_expect ~trailing_location ~tags ~expected_exn ~description ~lo
   let trailing_test_id = Expectation_id.mint () in
   let exn_test_id = Expectation_id.mint () in
   [%expr
-    match Ppx_inline_test_lib.testing with
+    match Ppx_inline_test_nobase_lib.testing with
     | `Not_testing -> ()
     | `Testing _ ->
       let module Ppx_expect_test_block =
-        Ppx_expect_runtime.Make_test_block (Expect_test_config)
+        Ppx_expect_nobase_runtime.Make_test_block (Expect_test_config)
       in
       Ppx_expect_test_block.run_suite
         ~filename_rel_to_project_root:[%e estring ~loc filename_rel_to_project_root]
@@ -262,25 +265,25 @@ let expect_test =
     Structure_item
     let_expect_pat
     (fun ~ctxt trailing ~tags ~name code ->
-    let loc = Ppxlib.Expansion_context.Extension.extension_point_loc ctxt in
-    let loc = { loc with loc_ghost = true } in
-    let trailing_location, expected_exn =
-      match trailing with
-      | Some (attr_loc, expected_exn) -> attr_loc, expected_exn
-      | None -> { loc with loc_start = loc.loc_end }, None
-    in
-    Ppx_inline_test.validate_extension_point_exn
-      ~name_of_ppx_rewriter:"ppx_expect"
-      ~loc
-      ~tags;
-    transform_let_expect
-      ~trailing_location
-      ~tags
-      ~expected_exn
-      ~description:name
-      ~loc
-      code
-    |> Ppx_inline_test.maybe_drop loc)
+       let loc = Ppxlib.Expansion_context.Extension.extension_point_loc ctxt in
+       let loc = { loc with loc_ghost = true } in
+       let trailing_location, expected_exn =
+         match trailing with
+         | Some (attr_loc, expected_exn) -> attr_loc, expected_exn
+         | None -> { loc with loc_start = loc.loc_end }, None
+       in
+       Ppx_inline_test.validate_extension_point_exn
+         ~name_of_ppx_rewriter:"ppx_expect"
+         ~loc
+         ~tags;
+       transform_let_expect
+         ~trailing_location
+         ~tags
+         ~expected_exn
+         ~description:name
+         ~loc
+         code
+       |> Ppx_inline_test.maybe_drop loc)
 ;;
 
 let () =
@@ -305,7 +308,7 @@ let () =
            2. The executable is being built with the [-inline-test-lib _] flag, indicating
            that there is some library for which we might run expect tests. If the
            [-inline-test-lib] flag was not passed, then we shouldn't insert the header and
-           footer, as we will not be running expect tests and the [Ppx_expect_runtime]
+           footer, as we will not be running expect tests and the [Ppx_expect_nobase_runtime]
            library might not even be in scope (as is the case in toplevel expect tests,
            which are not run through [Ppx_inline_test_lib]).
         *)
@@ -318,12 +321,14 @@ let () =
           Ppx_inline_test.maybe_drop
             loc
             [%expr
-              Ppx_expect_runtime.Current_file.set
+              Ppx_expect_nobase_runtime.Current_file.set
                 ~filename_rel_to_project_root:
                   [%e estring ~loc filename_rel_to_project_root]]
         and footer =
           let loc = { loc with loc_start = loc.loc_end } in
-          Ppx_inline_test.maybe_drop loc [%expr Ppx_expect_runtime.Current_file.unset ()]
+          Ppx_inline_test.maybe_drop
+            loc
+            [%expr Ppx_expect_nobase_runtime.Current_file.unset ()]
         in
         header, footer
       | _ -> [], [])

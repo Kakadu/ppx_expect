@@ -205,22 +205,22 @@ end = struct
           ; location = _
           ; test_block = _
           }
-          ->
-      let sexp_here ~basename ~line_number : Sexp.t =
-        List
-          [ List [ Atom "file"; sexp_of_string basename ]
-          ; List [ Atom "line"; sexp_of_int line_number ]
-          ]
-      in
-      raise_s
-        (Sexp.message
-           "Expect_test_runtime: reached one [let%expect_test] from another. Nesting \
-            expect\n\
-            tests is prohibited."
-           [ ( "outer_test"
-             , sexp_here ~basename:outer_basename ~line_number:outer_line_number )
-           ; "inner_test", sexp_here ~basename ~line_number
-           ]))
+        ->
+        let sexp_here ~basename ~line_number : Sexp.t =
+          List
+            [ List [ Atom "file"; sexp_of_string basename ]
+            ; List [ Atom "line"; sexp_of_int line_number ]
+            ]
+        in
+        raise_s
+          (Sexp.message
+             "Expect_test_runtime: reached one [let%expect_test] from another. Nesting \
+              expect\n\
+              tests is prohibited."
+             [ ( "outer_test"
+               , sexp_here ~basename:outer_basename ~line_number:outer_line_number )
+             ; "inner_test", sexp_here ~basename ~line_number
+             ]))
   ;;
 end
 
@@ -319,13 +319,13 @@ module Make (C : Expect_test_config_types.S) = struct
             ~absolute_filename
             expectations
             (fun ~original_file_contents ts ->
-            List.concat_map
-              ts
-              ~f:
-                (Test_node.For_mlt.to_diffs
-                   ~cr_for_multiple_outputs:Configured.cr_for_multiple_outputs
-                   ~expect_node_formatting:Expect_node_formatting.default
-                   ~original_file_contents))
+               List.concat_map
+                 ts
+                 ~f:
+                   (Test_node.For_mlt.to_diffs
+                      ~cr_for_multiple_outputs:Configured.cr_for_multiple_outputs
+                      ~expect_node_formatting:Expect_node_formatting.default
+                      ~original_file_contents))
         in
         (* To avoid capturing not-yet flushed data of the stdout/stderr buffers. *)
         Shared.flush ();
@@ -368,7 +368,7 @@ module Make (C : Expect_test_config_types.S) = struct
         Shared.clean_up_block test_block;
         Current_test.unset ();
         (* Report that this test passed, because we report expect test failures by a
-            different mechanism. *)
+           different mechanism. *)
         true)
   ;;
 end
@@ -382,22 +382,22 @@ let at_exit () =
         ; location = { start_bol; start_pos; end_pos }
         ; test_block
         }
-        ->
-    Shared.flush ();
-    let fin = Stdlib.open_in (Shared.output_file test_block) in
-    let all_out = Stdlib.really_input_string fin (Stdlib.in_channel_length fin) in
-    Shared.clean_up_block test_block;
-    Stdlib.Printf.eprintf
-      "File %S, line %d, characters %d-%d:\n\
-       Error: program exited while expect test was running!\n\
-       Output captured so far:\n\
-       %s\n\
-       %!"
-      basename
-      line_number
-      (start_pos - start_bol)
-      (end_pos - start_bol)
-      all_out)
+      ->
+      Shared.flush ();
+      let fin = Stdlib.open_in (Shared.output_file test_block) in
+      let all_out = Stdlib.really_input_string fin (Stdlib.in_channel_length fin) in
+      Shared.clean_up_block test_block;
+      Stdlib.Printf.eprintf
+        "File %S, line %d, characters %d-%d:\n\
+         Error: program exited while expect test was running!\n\
+         Output captured so far:\n\
+         %s\n\
+         %!"
+        basename
+        line_number
+        (start_pos - start_bol)
+        (end_pos - start_bol)
+        all_out)
 ;;
 
 module For_external = struct

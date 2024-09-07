@@ -79,8 +79,7 @@ open! Base
       (* This statement is added to the end of each file so that the expect test runtime
          knows the file is finished executing and a new one can be set as current. *)
       let () = Ppx_expect_runtime.Current_file.unset ()
-    ]}
-*)
+    ]} *)
 
 (* Register the reachability check and corrected file writing as an evaluator with
    [Ppx_inline_test_lib] *)
@@ -89,14 +88,14 @@ let () =
     Stdlib.Sys.chdir (Lazy.force Current_file.initial_dir);
     Test_node.Global_results_table.process_each_file
       ~f:(fun ~filename ~test_nodes ~postprocess ->
-      Write_corrected_file.f
-        test_nodes
-        ~use_color:(Ppx_inline_test_lib.use_color ())
-        ~in_place:(Ppx_inline_test_lib.in_place ())
-        ~diff_command:(Ppx_inline_test_lib.diff_command ())
-        ~diff_path_prefix:(Ppx_inline_test_lib.diff_path_prefix ())
-        ~with_:postprocess
-        ~filename)
+        Write_corrected_file.f
+          test_nodes
+          ~use_color:Ppx_inline_test_lib.use_color
+          ~in_place:Ppx_inline_test_lib.in_place
+          ~diff_command:Ppx_inline_test_lib.diff_command
+          ~diff_path_prefix:Ppx_inline_test_lib.diff_path_prefix
+          ~with_:postprocess
+          ~filename)
     |> Ppx_inline_test_lib.Test_result.combine_all)
 ;;
 

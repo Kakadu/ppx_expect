@@ -36,8 +36,7 @@ module Make (C : Expect_test_config_types.S) : sig
         accumulating the results of each reached "expectation" inside the corresponding
         [Test_node.t].
       - After the callback finishes, if any of the expectations do not match, inform the
-        inline testing harness that the test has "failed".
-  *)
+        inline testing harness that the test has "failed". *)
   val run_suite
     :  filename_rel_to_project_root:string (** File in which the test is defined *)
     -> line_number:int (** Line number of the start of the test *)
@@ -57,15 +56,15 @@ module Make (C : Expect_test_config_types.S) : sig
          (** ID to use for the test checking for uncaught exns. *)
     -> description:string option
          (** The string on the LHS of the [let%expect_test] binding, if any; passed to
-        [Ppx_inline_test_lib]. *)
+             [Ppx_inline_test_lib]. *)
     -> tags:string list
          (** Test tags from the LHS of the [let%expect_test] binding; passed to
-        [Ppx_inline_test_lib]. *)
+             [Ppx_inline_test_lib]. *)
     -> inline_test_config:Ppx_inline_test_lib.config
     -> expectations:(Expectation_id.t, Test_node.t) List.Assoc.t
          (** An assoc list from unique IDs to [Test_node.t]s. These tests are registered in a
-        global map for reachability checks. [Test_node.t]s are subsequently handled by
-        their ID. *)
+             global map for reachability checks. [Test_node.t]s are subsequently handled by
+             their ID. *)
     -> (unit -> unit C.IO.t)
        (** A callback representing the RHS of the [let%expect_test] binding. *)
     -> unit
@@ -78,8 +77,7 @@ module For_external : sig
       and return it without any sanitization or backtrace-checking. Note that this is
       different from the behavior of [[%expect.output]], which does perform sanitization.
 
-      If there is no test running, raise an error that includes [here].
-  *)
+      If there is no test running, raise an error that includes [here]. *)
   val read_current_test_output_exn : here:Source_code_position.t -> string
 
   val am_running_expect_test : unit -> bool

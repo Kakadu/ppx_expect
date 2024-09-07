@@ -61,5 +61,5 @@ let f
       ~file1:path
       ~file2:corrected_path
       ();
-    Error (Error.of_string "Changes found.")
+    Result.Error "Changes found."
 ;;

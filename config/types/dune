@@ -1,6 +1,7 @@
 (library
- (name expect_test_config_types)
- (public_name ppx_expect.config_types)
+ (name expect_test_nobase_config_types)
+ (public_name ppx_expect_nobase.config_types)
+ (wrapped false)
  (synopsis "Runtime configuration options for ppx_expect")
  (libraries)
  (preprocess no_preprocessing))
