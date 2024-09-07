@@ -1,0 +1,4 @@
+(library
+ (name compat)
+ (public_name ppx_expect_nobase.compat)
+ (modules Compat))
