@@ -1,4 +1,3 @@
-open! Base
 open Types
 
 module Type : sig
@@ -6,18 +5,22 @@ module Type : sig
   type t =
     | Exact (** Matches the captured output exactly, including whitespace. *)
     | Pretty
-        (** Matches a version of the captured output that has been formatted according to
+    (** Matches a version of the captured output that has been formatted according to
         standard rules about indentation and other whitespace. *)
 end
 
 (** Captured output that has been formatted according to the rules of the [Type.t] of
     its corresponding node. *)
-module Formatted : T
+module Formatted : sig
+  type t
+end
 
 (** Captured test output, possibly from multiple tests, after it has been formatted and
     compared to the original contents of the node; the contents that will be written to
     the node in the corrected file. *)
-module Reconciled : T
+module Reconciled : sig
+  type t
+end
 
 module Formatter : sig
   (** A [Formatter.t] describes how to convert captured [string] output into a
@@ -48,7 +51,7 @@ module Payload : sig
   (** Payloads given as arguments to expectation AST nodes. *)
   type t =
     { contents : string
-        (** The contents of the payload; the output expected at some node, as a raw [string]
+    (** The contents of the payload; the output expected at some node, as a raw [string]
         exactly as they were parsed from the source file. *)
     ; tag : String_node_format.Delimiter.t (** The delimiters used in the payload. *)
     }
@@ -73,16 +76,14 @@ val fail : Formatted.t -> Test_result.t
 
     If [tag] is not compatible with the new payload contents (for example, the tag
     represents a [{x| delimited string |x}] and the new contents contain ["|x}"]), the tag
-    is adjusted so the resulting payload can be parsed.
-*)
+    is adjusted so the resulting payload can be parsed. *)
 val to_formatted_payload : tag:String_node_format.Delimiter.t -> Reconciled.t -> Payload.t
 
 (** The source-code representation of a reconciled expect node.
 
     If [tag] is not compatible with the new payload contents (for example, the tag
     represents a [{x| delimited string |x}] and the new contents contain ["|x}"]), the tag
-    is adjusted so the resulting payload can be parsed.
-*)
+    is adjusted so the resulting payload can be parsed. *)
 val to_source_code_string
   :  expect_node_formatting:Expect_node_formatting.t
   -> node_shape:String_node_format.Shape.t

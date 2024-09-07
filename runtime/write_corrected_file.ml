@@ -1,4 +1,4 @@
-open! Base
+open Compat
 open Types
 
 module Patch_with_file_contents = struct
@@ -17,10 +17,10 @@ let rewrite_corrections ~original_file_contents ~corrections =
       corrections
       ~init:0
       ~f:(fun l_pos ({ start_pos; end_pos; start_bol = _ }, correction) ->
-      let code_chunk =
-        String.sub original_file_contents ~pos:l_pos ~len:(start_pos - l_pos)
-      in
-      end_pos, [ code_chunk; correction ])
+        let code_chunk =
+          String.sub original_file_contents ~pos:l_pos ~len:(start_pos - l_pos)
+        in
+        end_pos, [ code_chunk; correction ])
   in
   let result = List.concat strs |> String.concat in
   let rest = String.subo original_file_contents ~pos:l_pos in

@@ -1,4 +1,4 @@
-open! Base
+open Compat
 open Types
 include Expectation_intf.Definitions
 
@@ -40,7 +40,7 @@ let formatter
   Output.Formatter.create
   @@
   match payload_type with
-  | Exact -> Fn.id
+  | Exact -> Fun.id
   | Pretty ->
     fun str ->
       let lines =
@@ -67,8 +67,8 @@ let formatter
         match
           indent_and_contents
           |> List.filter_map ~f:(function
-               | _indent, "" -> None
-               | indent, _ -> Some indent)
+            | _indent, "" -> None
+            | indent, _ -> Some indent)
           |> List.min_elt ~compare:Int.compare
         with
         | None -> []
@@ -109,9 +109,9 @@ let formatter
              start_pos
              - start_bol
              +
-             (match on_incorrect_output.kind with
-              | Extension -> expect_node_formatting.indent
-              | Attribute -> 0)
+               (match on_incorrect_output.kind with
+               | Extension -> expect_node_formatting.indent
+               | Attribute -> 0)
          in
          let spaces n = String.make n ' ' in
          let first_line, indentation, last_line =
@@ -141,7 +141,7 @@ let extension_syntax extension_name ~payload_loc ~node_loc =
     (* An extension point whose payload location contains the location of the entire
        extension point is using the "shorthand" syntax. *)
     (T { name = extension_name; kind = Extension; hand = Shorthand }
-      : String_node_format.Shape.t)
+     : String_node_format.Shape.t)
   | _ -> T { name = extension_name; kind = Extension; hand = Longhand }
 ;;
 

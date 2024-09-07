@@ -1,4 +1,4 @@
-open! Base
+open Compat
 open Types
 
 module Type = struct

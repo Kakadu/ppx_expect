@@ -1,4 +1,3 @@
-open! Base
 open Types
 
 (** The callback expected by [f], which should convert the input to patches and is

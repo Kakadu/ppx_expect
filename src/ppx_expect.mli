@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 open Ppxlib
 open Ppx_expect_nobase_runtime
 

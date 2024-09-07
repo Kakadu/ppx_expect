@@ -1,5 +1,4 @@
-open! Base
-open! Import
+open! Compat
 
 let chop_if_exists ~ancestor ~from:path =
   String.chop_prefix_if_exists path ~prefix:(ancestor ^ "/")
@@ -20,7 +19,7 @@ let f
     then Stdio.In_channel.with_file path ~f:Stdio.In_channel.input_all
     else ""
   in
-  match String.( = ) prev_contents next_contents with
+  match String.equal prev_contents next_contents with
   | true ->
     (* It's possible for stale .corrected files to linger and ideally we would delete them
        here, but this probably isn't worth fixing since it's mooted by dune, which puts

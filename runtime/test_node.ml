@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 open Types
 
 module Correction = struct
@@ -163,8 +163,8 @@ let to_correction
   let results_list = Queue.to_list results in
   let unreached_list, outputs_list =
     List.partition_map results_list ~f:(function
-      | Did_not_reach -> First ()
-      | Reached_with_output output -> Second output)
+      | Did_not_reach -> Left ()
+      | Reached_with_output output -> Right output)
   in
   let distinct_outputs =
     (* Allow distinct raw outputs as long as their formatted [result]s
@@ -209,11 +209,11 @@ let to_correction
     let outputs =
       results_list
       |> List.map ~f:(function
-           | Reached_with_output { raw; _ } -> raw
-           | Did_not_reach ->
-             Printf.sprintf
-               "<expect test ran without %s>"
-               expectation.inconsistent_outputs_message)
+        | Reached_with_output { raw; _ } -> raw
+        | Did_not_reach ->
+          Printf.sprintf
+            "<expect test ran without %s>"
+            expectation.inconsistent_outputs_message)
     in
     cr_for_multiple_outputs ~output_name:expectation.inconsistent_outputs_message ~outputs
     |> Output.Formatter.apply (Expectation.formatter ~expect_node_formatting expectation)
@@ -259,60 +259,63 @@ let record_end_of_run t =
 let record_result ~expect_node_formatting ~failure_ref ~test_output_raw (T inner) =
   ignore
     (record_and_return_result ~expect_node_formatting ~failure_ref ~test_output_raw inner
-      : Output.Test_result.t * String_node_format.Delimiter.t)
+     : Output.Test_result.t * String_node_format.Delimiter.t)
 ;;
 
 module Global_results_table = struct
   type node = t
   type postprocess = node list Write_corrected_file.Patch_with_file_contents.t
 
+  module Expectation_hash = Hashtbl_make (Expectation_id)
+  module String_hash = Hashtbl_make (String)
+
   type file =
-    { expectations : node Hashtbl.M(Expectation_id).t
+    { expectations : node Expectation_hash.t
     ; postprocess : postprocess
     }
 
-  let global_results_table : file Hashtbl.M(String).t = Hashtbl.create (module String)
+  let global_results_table : file Hashtbl.Make(String).t = String_hash.create 15
 
   let find_test ~absolute_filename ~(test_id : Expectation_id.t) =
-    Hashtbl.find global_results_table absolute_filename
-    |> Option.bind ~f:(fun { expectations; _ } -> Hashtbl.find expectations test_id)
+    String_hash.find_opt global_results_table absolute_filename
+    |> Option.bind ~f:(fun { expectations; _ } ->
+      Expectation_hash.find_opt expectations test_id)
     |> Option.value_exn
          ~error:
-           (Error.of_string
-              (Printf.sprintf
-                 "Internal expect test bug: could not find test\nFile: %s\nID:   %d"
-                 absolute_filename
-                 (Expectation_id.to_int_exn test_id)))
+           (Printf.sprintf
+              "Internal expect test bug: could not find test\nFile: %s\nID:   %d"
+              absolute_filename
+              (Expectation_id.to_int_exn test_id))
   ;;
 
   let initialize_and_register_tests ~absolute_filename tests postprocess =
     let tests_as_in_table = Queue.create () in
-    Hashtbl.update global_results_table absolute_filename ~f:(fun file ->
+    String_hash.update global_results_table absolute_filename ~f:(fun file ->
       let file =
         Option.value
           file
-          ~default:{ expectations = Hashtbl.create (module Expectation_id); postprocess }
+          ~default:{ expectations = Expectation_hash.create 17; postprocess }
       in
-      let tests = Hashtbl.of_alist_exn (module Expectation_id) tests in
-      Hashtbl.merge_into
+      let tests = Expectation_hash.of_alist_exn tests in
+      Expectation_hash.merge_into
         ~src:tests
         ~dst:file.expectations
         ~f:(fun ~key:test_id new_test existing_test ->
-        let (T (Test t) as test) = Option.value existing_test ~default:new_test in
-        t.reached_this_run <- false;
-        Queue.enqueue tests_as_in_table (test_id, test);
-        Set_to test);
+          let (T (Test t) as test) = Option.value existing_test ~default:new_test in
+          t.reached_this_run <- false;
+          Queue.enqueue tests_as_in_table (test_id, test);
+          Set_to test);
       file);
     Queue.to_list tests_as_in_table
   ;;
 
   let process_each_file ~f =
     global_results_table
-    |> Hashtbl.to_alist
+    |> String_hash.to_alist
     |> List.sort ~compare:(Comparable.lift ~f:fst String.compare)
     |> List.map ~f:(fun (filename, { expectations; postprocess }) ->
-         let test_nodes = Hashtbl.data expectations in
-         f ~filename ~test_nodes ~postprocess)
+      let test_nodes = Expectation_hash.data expectations in
+      f ~filename ~test_nodes ~postprocess)
   ;;
 end
 

@@ -1,4 +1,4 @@
-open! Base
+open Compat
 open Types
 
 (** Accumulator of test results for one expect node *)
@@ -9,14 +9,13 @@ module Create : sig
       parsed out of extension points in a [let%expect_test].
 
       Each of these creators accepts the location of the entire AST node associated with
-      the e.g. [[%expect]] test.
-  *)
+      the e.g. [[%expect]] test. *)
 
   (** [[%expect _]] *)
   val expect
     :  formatting_flexibility:Expect_node_formatting.Flexibility.t
          (** If tests should be flexible about formatting rules, the formatting rules that
-        define this flexibility *)
+             define this flexibility *)
     -> node_loc:Compact_loc.t (** Location of the [[%expect _]] node *)
     -> located_payload:(Output.Payload.t * Compact_loc.t) option
          (** The string payload and its location, if there is one *)
@@ -26,7 +25,7 @@ module Create : sig
   val expect_exact
     :  formatting_flexibility:Expect_node_formatting.Flexibility.t
          (** If tests should be flexible about formatting rules, the formatting rules that
-        define this flexibility *)
+             define this flexibility *)
     -> node_loc:Compact_loc.t (** Location of the [[%expect_exact _]] node *)
     -> located_payload:(Output.Payload.t * Compact_loc.t) option
          (** The string payload and its location, if there is one *)
@@ -76,8 +75,7 @@ module Global_results_table : sig
       4. Return an assoc list from [Expectation_id.t]s to the [Test_node.t]s that will
       actually be used during testing; for each test, this is the same [Test_node.t] that
       was passed in if that test has not yet been registered, and otherwise the
-      [Test_node.t] that was already in the table
-  *)
+      [Test_node.t] that was already in the table *)
   val initialize_and_register_tests
     :  absolute_filename:string
     -> (Expectation_id.t, node) List.Assoc.t

@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 
 module Compact_loc = struct
   type t =
@@ -51,6 +51,10 @@ end
 
 module Expectation_id = struct
   include Int
+
+  let to_int_exn = Fun.id
+  let of_int_exn = Fun.id
+  let hash = Hashtbl.hash
 
   let mint =
     let counter = ref 0 in

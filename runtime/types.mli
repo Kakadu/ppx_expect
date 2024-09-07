@@ -1,4 +1,4 @@
-open! Base
+open Compat
 
 module Expect_node_formatting : sig
   (** Configurations for the formatting of rewritten expect nodes and attributes. The
@@ -6,11 +6,11 @@ module Expect_node_formatting : sig
       other clients of the expect test runtime. *)
   type t =
     { indent : int
-        (** The number of spaces that the bodies of [[%expect]] nodes are indented with
+    (** The number of spaces that the bodies of [[%expect]] nodes are indented with
         respect to the left edge of the extension point and that trailing [[%expect]]
         nodes are indented with respect to the enclosing [let%expect] *)
     ; always_on_own_line : bool
-        (** Whether the output of [[%expect]] nodes should always be formatted so it gets its
+    (** Whether the output of [[%expect]] nodes should always be formatted so it gets its
         own lines, even if it is only one line long. If this option is true, one-line
         expectations will be printed like
 
@@ -24,13 +24,12 @@ module Expect_node_formatting : sig
 
         {v
         [%expect {| foo |}]
-        v}
-    *)
+        v} *)
     ; extension_sigil : string
-        (** The sigil that should be printed to signal the start of an extension point. By
+    (** The sigil that should be printed to signal the start of an extension point. By
         default, this is ["%"], though in toplevel tests it changes to ["%%"]. *)
     ; attribute_sigil : string
-        (** The sigil that should be printed to signal the start of an attribute. By default,
+    (** The sigil that should be printed to signal the start of an attribute. By default,
         this is ["@@"]. *)
     }
 
@@ -66,8 +65,7 @@ module Compact_loc : sig
       Then [start_bol] is the position of [0], [start_pos] of [a], and [end_pos] of [b].
 
       This record corresponds to a [Ppxlib.Location.t] restricted to just the
-      [loc_start.pos_cbol], [loc_start.pos_cnum], and [loc_end.pos_cnum] fields.
-  *)
+      [loc_start.pos_cbol], [loc_start.pos_cnum], and [loc_end.pos_cnum] fields. *)
   type t =
     { start_bol : int (** Index of the first character of the first line in the range. *)
     ; start_pos : int (** Index of the first character in the range. *)
@@ -91,9 +89,9 @@ module Virtual_loc : sig
       test. *)
   type t =
     { loc : Compact_loc.t
-        (** The location where the expect node should be inserted on failure *)
+    (** The location where the expect node should be inserted on failure *)
     ; body_loc : Compact_loc.t
-        (** The location spanning from the beginning of the [let%expect_test] binding to the
+    (** The location spanning from the beginning of the [let%expect_test] binding to the
         end of the expression in the body of the test. *)
     }
 end
@@ -106,7 +104,7 @@ module Expectation_id : sig
   type t
 
   include Intable.S with type t := t
-  include Hashable.Key with type t := t
+  include Hashtbl.HashedType with type t := t
 
   (** Create a new [t]. Calls to [mint] will give distinct ids, but uniqueness is not
       guaranteed if [of_int_exn] is used to create an id. *)

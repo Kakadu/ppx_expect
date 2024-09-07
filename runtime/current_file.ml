@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 
 let current = ref None
 
@@ -27,10 +27,7 @@ let get () =
   | None -> raise_s (Sexp.message "Expect_test_collector.get: there is no active file" [])
 ;;
 
-let initial_dir =
-  let dir_or_error = Or_error.try_with ~backtrace:true Stdlib.Sys.getcwd in
-  lazy (Or_error.ok_exn dir_or_error)
-;;
+let initial_dir = lazy (Sys.getcwd ())
 
 let absolute_path file =
   if Stdlib.Filename.is_relative file

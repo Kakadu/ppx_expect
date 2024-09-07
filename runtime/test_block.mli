@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 open Types
 
 (** Functor for building the runtime representation of a [let%expect_test] block *)

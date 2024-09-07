@@ -4,6 +4,7 @@
  (libraries
   ;base
   ppxlib.print_diff
+  ppx_expect_nobase.compat
   ;stdio
   )
  (preprocess no_preprocessing))

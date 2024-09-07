@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 open Types
 
 (* [Shared] and [Configured] primarily contain boilerplate involving the FFI and printing
@@ -206,10 +206,10 @@ end = struct
           ; test_block = _
           }
         ->
-        let sexp_here ~basename ~line_number : Sexp.t =
+        let sexp_here ~basename ~line_number : Sexplib0.Sexp.t =
           List
             [ List [ Atom "file"; sexp_of_string basename ]
-            ; List [ Atom "line"; sexp_of_int line_number ]
+            ; List [ Atom "line"; Sexplib0.Sexp_conv.sexp_of_int line_number ]
             ]
         in
         raise_s

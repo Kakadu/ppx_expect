@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 
 (** This library provides the runtime representation of expect tests and much of the logic
     for running them.

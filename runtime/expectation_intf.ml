@@ -1,4 +1,3 @@
-open! Base
 open Types
 
 module Definitions = struct
@@ -11,13 +10,13 @@ module Definitions = struct
           { whole_node : Compact_loc.t
           ; payload : Compact_loc.t option
           }
-          (** An expectation parsed from the test file and which should be overwritten by
+      (** An expectation parsed from the test file and which should be overwritten by
           corrections. Corrections to just the payload should overwrite just the [payload]
           location, if present. If no [payload] location is present, or for corrections
           that change the entire node (e.g. a change from [[%expect _]] to
           [[%expect.unreachable]]), overwrite the [whole_node] loc. *)
       | Insert of Virtual_loc.t
-          (** An expectation not parsed from the file that should be inserted into
+      (** An expectation not parsed from the file that should be inserted into
           [Virtual_loc.loc] and is associated with a test whose body is at
           [Virtual_loc.body_loc] *)
   end
@@ -35,7 +34,7 @@ module Definitions = struct
         every time a test is run *)
     type t =
       | Can_reach
-          (** Test passes even if node is only reached on *some* executions of a test *)
+      (** Test passes even if node is only reached on *some* executions of a test *)
       | Must_reach (** Test fails unless node is reached by *all* executions of a test *)
   end
 
@@ -45,7 +44,7 @@ module Definitions = struct
       | Silent (** Do nothing *)
       | Delete (** Delete this expectation from the source file *)
       | Replace_with_unreachable
-          (** Replace this expectation with a [[%expect.unreachable]] node *)
+      (** Replace this expectation with a [[%expect.unreachable]] node *)
   end
 
   module Behavior = struct
@@ -55,8 +54,7 @@ module Definitions = struct
         ['behavior_type] determines the types of rewrites that are possible at this node.
         It is either [`Expect] (indicating that both corrections for unexpected output and
         rewrites for unreachability are possible) or [`Unreachable] (indicating that only
-        corrections for unexpected output are possible).
-    *)
+        corrections for unexpected output are possible). *)
     type _ t =
       | Expect :
           { payload : Output.Payload.t
@@ -66,7 +64,7 @@ module Definitions = struct
           -> [ `Expect ] t
       | Unreachable :
           { reachability_of_corrected : Expect_reachability.t
-              (** The reachability of the node inserted if this unreachable node is
+          (** The reachability of the node inserted if this unreachable node is
               unexpectedly reached *)
           }
           -> [ `Unreachable ] t
@@ -75,14 +73,13 @@ module Definitions = struct
   (** A [('behavior_type) t] carries information about how to run tests for a
       specific expect node and rewrite it in the source file if there are corrections. The
       ['behavior_type] type variable has the same meanings as in
-      ['behavior_type Behavior.t].
-  *)
+      ['behavior_type Behavior.t]. *)
   type 'behavior_type t =
     { position : Insert_loc.t
     ; behavior : 'behavior_type Behavior.t
     ; payload_type : Output.Type.t
     ; on_incorrect_output : String_node_format.Shape.t
-        (** The name and syntax style of the extension point or attribute used to write
+    (** The name and syntax style of the extension point or attribute used to write
         corrections when receiving "incorrect" output for this test node. For each [t],
         there is only one such node. For example, if an [{%expect_exact||}] node is
         reached with incorrect output, it is always corrected to a different
@@ -91,8 +88,7 @@ module Definitions = struct
 
         Note that for a node that should be reachable, the correction when it is found to
         be unreachable is instead governed by [on_unreachable] in the [Expect] constructor
-        of [behavior].
-    *)
+        of [behavior]. *)
     ; inconsistent_outputs_message : string
     }
 end

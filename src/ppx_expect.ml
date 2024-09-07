@@ -1,4 +1,4 @@
-open! Base
+open! Compat
 open Ppxlib
 open Ast_builder.Default
 open Ppx_expect_nobase_runtime
@@ -207,9 +207,10 @@ let transform_let_expect ~trailing_location ~tags ~expected_exn ~description ~lo
   let trailing_test_id = Expectation_id.mint () in
   let exn_test_id = Expectation_id.mint () in
   [%expr
-    match Ppx_inline_test_nobase_lib.testing with
+    match Ppx_inline_test_lib.testing with
     | `Not_testing -> ()
     | `Testing _ ->
+      Printexc.record_backtrace true;
       let module Ppx_expect_test_block =
         Ppx_expect_nobase_runtime.Make_test_block (Expect_test_config)
       in
