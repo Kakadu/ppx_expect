@@ -1,7 +1,7 @@
 opam-version: "2.0"
 version: "v0.17.0"
-maintainer: "Jane Street developers"
-authors: ["Jane Street Group, LLC"]
+maintainer: "Dmitrii Kosarev a.k.a. Kakadu"
+authors: ["Jane Street Group, LLC"  "Dmitrii Kosarev a.k.a. Kakadu"]
 homepage: "https://github.com/janestreet/ppx_expect"
 bug-reports: "https://github.com/janestreet/ppx_expect/issues"
 dev-repo: "git+https://github.com/janestreet/ppx_expect_nobase.git"
@@ -12,7 +12,6 @@ build: [
 ]
 depends: [
   "ocaml"
-  "ppx_here_nobase"        {>= "v0.17" & < "v0.18"}
   "ppx_inline_test_nobase" {>= "v0.17" & < "v0.18"}
 
   "dune"            {>= "3.11.0"}

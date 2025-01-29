@@ -3,12 +3,12 @@
  (public_name ppx_expect_nobase)
  (kind ppx_rewriter)
  (libraries
-  ;base
   ppxlib
   ppx_expect_nobase_runtime
   ppx_inline_test_nobase
   ppx_inline_test_nobase.libname
-  ppx_here_nobase.expander)
+  ;
+  )
  (ppx_runtime_libraries ppx_expect_nobase.runtime ppx_expect_nobase.config)
  (preprocess
   (pps ppxlib.metaquot))

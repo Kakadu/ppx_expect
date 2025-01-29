@@ -194,10 +194,23 @@ let replace_and_collect_expects =
   end
 ;;
 
+(* from ppx_here *)
+let chop_dot_slash_prefix ~fname =
+  if  String.starts_with ~prefix:"./" fname
+  then StringLabels.sub fname ~pos:2 ~len:(String.length fname -2)
+  else fname
+
+let expand_filename fname =
+  match Filename.is_relative fname, None with
+  | true, Some dirname ->
+    (* If [dirname] is given and [fname] is relative, then prepend [dirname]. *)
+    Filename.concat dirname (chop_dot_slash_prefix ~fname)
+  | _ -> fname
+
 let transform_let_expect ~trailing_location ~tags ~expected_exn ~description ~loc body =
   let body, expectations = replace_and_collect_expects#expression body [] in
   let filename_rel_to_project_root =
-    Ppx_here_expander.expand_filename loc.loc_start.pos_fname
+    expand_filename loc.loc_start.pos_fname
   in
   let trailing_location = compact_loc_of_ppxlib_location trailing_location in
   let body_loc =
@@ -315,7 +328,7 @@ let () =
         *)
         let loc = { loc with loc_ghost = true } in
         let filename_rel_to_project_root =
-          Ppx_here_expander.expand_filename loc.loc_start.pos_fname
+          expand_filename loc.loc_start.pos_fname
         in
         let header =
           let loc = { loc with loc_end = loc.loc_start } in
