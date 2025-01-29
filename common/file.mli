@@ -6,7 +6,8 @@ module Name : sig
     [@@@ocaml.warning "-32"]
 
     include Sexplib0.Sexpable.S with type t := t
-    include Ppx_compare_lib.Comparable.S with type t := t
+    (* include Ppx_compare_lib.Comparable.S with type t := t *)
+    val compare: t -> t -> int
   end
   [@@ocaml.doc "@inline"]
 
@@ -36,7 +37,8 @@ module Location : sig
     [@@@ocaml.warning "-32"]
 
     include Sexplib0.Sexpable.S with type t := t
-    include Ppx_compare_lib.Comparable.S with type t := t
+    (* include Ppx_compare_lib.Comparable.S with type t := t *)
+    val compare: t -> t -> int
   end
   [@@ocaml.doc "@inline"]
 
@@ -57,7 +59,8 @@ module Digest : sig
 
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+    (* include Ppx_compare_lib.Comparable.S with type t := t *)
+    val compare: t -> t -> int
   end
   [@@ocaml.doc "@inline"]
 

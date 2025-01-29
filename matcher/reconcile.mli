@@ -11,7 +11,7 @@ module Result : sig
   include sig
     [@@@ocaml.warning "-32"]
 
-    include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
+    val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
     val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
   end

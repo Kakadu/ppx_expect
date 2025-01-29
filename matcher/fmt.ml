@@ -1,4 +1,3 @@
-open Ppx_compare_lib.Builtin
 open Sexplib0.Sexp_conv
 
 type t =
@@ -31,13 +30,13 @@ let compare =
      then 0
      else (
        match a__007_, b__008_ with
-       | Regexp _a__009_, Regexp _b__010_ -> compare_string _a__009_ _b__010_
+       | Regexp _a__009_, Regexp _b__010_ -> String.compare _a__009_ _b__010_
        | Regexp _, _ -> -1
        | _, Regexp _ -> 1
-       | Glob _a__011_, Glob _b__012_ -> compare_string _a__011_ _b__012_
+       | Glob _a__011_, Glob _b__012_ -> String.compare _a__011_ _b__012_
        | Glob _, _ -> -1
        | _, Glob _ -> 1
-       | Literal _a__013_, Literal _b__014_ -> compare_string _a__013_ _b__014_)
+       | Literal _a__013_, Literal _b__014_ -> String.compare _a__013_ _b__014_)
        : t -> t -> int)
 ;;
 
@@ -49,13 +48,13 @@ let equal =
      then true
      else (
        match a__015_, b__016_ with
-       | Regexp _a__017_, Regexp _b__018_ -> equal_string _a__017_ _b__018_
+       | Regexp _a__017_, Regexp _b__018_ -> String.equal _a__017_ _b__018_
        | Regexp _, _ -> false
        | _, Regexp _ -> false
-       | Glob _a__019_, Glob _b__020_ -> equal_string _a__019_ _b__020_
+       | Glob _a__019_, Glob _b__020_ -> String.equal _a__019_ _b__020_
        | Glob _, _ -> false
        | _, Glob _ -> false
-       | Literal _a__021_, Literal _b__022_ -> equal_string _a__021_ _b__022_)
+       | Literal _a__021_, Literal _b__022_ -> String.equal _a__021_ _b__022_)
        : t -> t -> bool)
 ;;
 

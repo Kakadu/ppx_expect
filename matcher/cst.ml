@@ -334,7 +334,7 @@ let compare_multi_lines : 'a. ('a -> 'a -> int) -> 'a multi_lines -> 'a multi_li
        | 0 ->
          (match String.compare a__065_.indentation b__066_.indentation with
           | 0 ->
-            Ppx_compare_lib.Builtin.compare_list
+            List.compare
               (fun a__067_ b__068_ -> Line.compare _cmp__a a__067_ b__068_)
               a__065_.lines
               b__066_.lines

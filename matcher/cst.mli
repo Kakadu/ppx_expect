@@ -42,8 +42,8 @@ module Line : sig
     sig
       [@@@ocaml.warning "-32"]
       val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
-      include Ppx_compare_lib.Comparable.S1 with type 'a t :=  'a t
-      include Ppx_compare_lib.Equal.S1 with type 'a t :=  'a t
+      val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
+      val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
     end[@@ocaml.doc "@inline"]
   [@@@end]
 
@@ -149,8 +149,8 @@ include
   sig
     [@@@ocaml.warning "-32"]
     val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
-    include Ppx_compare_lib.Comparable.S1 with type 'a t :=  'a t
-    include Ppx_compare_lib.Equal.S1 with type 'a t :=  'a t
+    val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   end[@@ocaml.doc "@inline"]
 [@@@end]
 

@@ -79,7 +79,7 @@ let dir_seps = '/' :: (if Sys.win32 then [ '\\'; ':' ] else [])
 
 let resolve_filename filename =
   let relative_to =
-    match Ppx_inline_test_lib.source_tree_root with
+    match Ppx_inline_test_lib.source_tree_root () with
     | None -> File.initial_dir ()
     | Some root ->
       if Stdlib.Filename.is_relative root
@@ -279,9 +279,9 @@ let evaluate_tests
 let () =
   Ppx_inline_test_lib.add_evaluator ~f:(fun () ->
     evaluate_tests
-      ~use_color:Ppx_inline_test_lib.use_color
-      ~in_place:Ppx_inline_test_lib.in_place
-      ~diff_command:Ppx_inline_test_lib.diff_command
-      ~diff_path_prefix:Ppx_inline_test_lib.diff_path_prefix
+      ~use_color:(Ppx_inline_test_lib.use_color())
+      ~in_place:(Ppx_inline_test_lib.in_place())
+      ~diff_command:(Ppx_inline_test_lib.diff_command())
+      ~diff_path_prefix:(Ppx_inline_test_lib.diff_path_prefix())
       ~allow_output_patterns:false)
 ;;

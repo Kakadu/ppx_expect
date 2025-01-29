@@ -1,5 +1,4 @@
 
-open Ppx_compare_lib.Builtin
 open Sexplib0.Sexp_conv
 
 module Body = struct
@@ -33,7 +32,7 @@ module Body = struct
     then 0
     else (
       match a__007_, b__008_ with
-      | Exact _a__009_, Exact _b__010_ -> compare_string _a__009_ _b__010_
+      | Exact _a__009_, Exact _b__010_ -> String.compare _a__009_ _b__010_
       | Exact _, _ -> -1
       | _, Exact _ -> 1
       | Output, Output -> 0
@@ -53,7 +52,7 @@ module Body = struct
     then true
     else (
       match a__013_, b__014_ with
-      | Exact _a__015_, Exact _b__016_ -> equal_string _a__015_ _b__016_
+      | Exact _a__015_, Exact _b__016_ -> String.equal _a__015_ _b__016_
       | Exact _, _ -> false
       | _, Exact _ -> false
       | Output, Output -> true
@@ -124,7 +123,7 @@ let compare : 'a. ('a -> 'a -> int) -> 'a t -> 'a t -> int =
   if Stdlib.( == ) a__029_ b__030_
   then 0
   else (
-    match compare_option compare_string a__029_.tag b__030_.tag with
+    match Option.compare String.compare a__029_.tag b__030_.tag with
     | 0 ->
       (match Body.compare _cmp__a a__029_.body b__030_.body with
        | 0 ->
@@ -143,7 +142,7 @@ let equal : 'a. ('a -> 'a -> bool) -> 'a t -> 'a t -> bool =
   then true
   else
     Stdlib.( && )
-      (equal_option equal_string a__035_.tag b__036_.tag)
+      (Option.equal String.equal a__035_.tag b__036_.tag)
       (Stdlib.( && )
          (Body.equal _cmp__a a__035_.body b__036_.body)
          (Stdlib.( && )
@@ -163,7 +162,7 @@ module Raw = struct
   let _ = sexp_of_t
 
   let compare =
-    (fun a__042_ b__043_ -> compare compare_string a__042_ b__043_ : t -> t -> int)
+    (fun a__042_ b__043_ -> compare String.compare a__042_ b__043_ : t -> t -> int)
   ;;
 
   let _ = compare

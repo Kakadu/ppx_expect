@@ -12,8 +12,10 @@ module Body : sig
 
     val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
-    include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-    include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+    (* include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t *)
+    val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
+    (* include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t *)
+    val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   end
   [@@ocaml.doc "@inline"]
 
@@ -39,8 +41,10 @@ include sig
 
   val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
 
-  include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t
-  include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t
+  (* include Ppx_compare_lib.Comparable.S1 with type 'a t := 'a t *)
+  val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  (* include Ppx_compare_lib.Equal.S1 with type 'a t := 'a t *)
+  val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 end
 [@@ocaml.doc "@inline"]
 
@@ -54,7 +58,8 @@ module Raw : sig
 
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+    (* include Ppx_compare_lib.Comparable.S with type t := t *)
+    val compare: t -> t -> int
   end
   [@@ocaml.doc "@inline"]
 

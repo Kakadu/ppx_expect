@@ -11,8 +11,9 @@ include sig
 
   val sexp_of_t : t -> Sexplib0.Sexp.t
 
-  include Ppx_compare_lib.Comparable.S with type t := t
-  include Ppx_compare_lib.Equal.S with type t := t
+  val compare: t -> t -> int
+
+  val equal: t -> t -> bool
 end
 [@@ocaml.doc "@inline"]
 

@@ -4,7 +4,8 @@ module Name : sig
   include sig
     [@@@ocaml.warning "-32"]
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+    (* include Ppx_compare_lib.Comparable.S with type t := t *)
+    val compare: t -> t -> int
     include Sexplib0.Sexpable.S with type t := t
   end
   [@@ocaml.doc "@inline"]
@@ -156,12 +157,12 @@ module Location = struct
          else (
            match Name.compare a__015_.filename b__016_.filename with
            | 0 ->
-             (match Ppx_compare_lib.Builtin.compare_int a__015_.line_number b__016_.line_number with
+             (match Int.compare a__015_.line_number b__016_.line_number with
               | 0 ->
-                (match Ppx_compare_lib.Builtin.compare_int a__015_.line_start b__016_.line_start with
+                (match Int.compare a__015_.line_start b__016_.line_start with
                  | 0 ->
-                   (match Ppx_compare_lib.Builtin.compare_int a__015_.start_pos b__016_.start_pos with
-                    | 0 -> Ppx_compare_lib.Builtin.compare_int a__015_.end_pos b__016_.end_pos
+                   (match Int.compare a__015_.start_pos b__016_.start_pos with
+                    | 0 -> Int.compare a__015_.end_pos b__016_.end_pos
                     | n -> n)
                  | n -> n)
               | n -> n)
@@ -201,7 +202,8 @@ module Digest : sig
 
     val sexp_of_t : t -> Sexplib0.Sexp.t
 
-    include Ppx_compare_lib.Comparable.S with type t := t
+    (* include Ppx_compare_lib.Comparable.S with type t := t *)
+    val compare: t -> t -> int
   end
   [@@ocaml.doc "@inline"]
 
@@ -215,7 +217,7 @@ end = struct
   let _ = fun (_ : t) -> ()
   let sexp_of_t = (Sexplib.Conv.sexp_of_string : t -> Sexplib0.Sexp.t)
   let _ = sexp_of_t
-  let compare = (Ppx_compare_lib.Builtin.compare_string : t -> t -> int)
+  let compare = (String.compare : t -> t -> int)
   let _ = compare
 
   [@@@end]
