@@ -97,6 +97,26 @@ let file_digest =
       Stdlib.Digest.file fname |> Stdlib.Digest.to_hex)
 ;;
 
+let chop_prefix ~prefix fname =
+  if String.starts_with ~prefix fname
+  then Some (String.sub fname (String.length prefix) (String.length fname - String.length prefix))
+  else None
+
+let chop_dot_slash_prefix ~fname =
+  match chop_prefix ~prefix:"./" fname with
+  | Some fname -> fname
+  | None -> fname
+;;
+
+let expand_filename fname =
+  match Filename.is_relative fname with
+  | true->
+    (* If [dirname] is given and [fname] is relative, then prepend [dirname]. *)
+    (* Filename.concat dirname (chop_dot_slash_prefix ~fname) *)
+    chop_dot_slash_prefix ~fname
+  | _ -> fname
+;;
+
 let rewrite_test_body ~descr ~tags ~uncaught_exn ~called_by_merlin pstr_loc body =
   let loc = pstr_loc in
   let expectations =
@@ -112,7 +132,7 @@ let rewrite_test_body ~descr ~tags ~uncaught_exn ~called_by_merlin pstr_loc body
   in
   let body = replace_expects#expression body in
   let absolute_filename =
-    Ppx_here_expander.expand_filename pstr_loc.loc_start.pos_fname
+    expand_filename pstr_loc.loc_start.pos_fname
   in
   let hash =
     if called_by_merlin
@@ -214,7 +234,7 @@ let () =
         let loc = { loc with loc_ghost = true } in
         let maybe_drop = Ppx_inline_test.maybe_drop in
         let absolute_filename =
-          Ppx_here_expander.expand_filename loc.loc_start.pos_fname
+          expand_filename loc.loc_start.pos_fname
         in
         let header =
           let loc = { loc with loc_end = loc.loc_start } in
