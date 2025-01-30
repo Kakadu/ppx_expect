@@ -1,5 +1,21 @@
 #+TITLE: expect-test - a cram like framework for OCaml
 
+** Expect test nobase
+
+This is a fork of https://github.com/janestreet/ppx_expect with lesser dependecies.
+It should be used as drop-in preplacement of ppx_expect
+
+Changes:
+
+* time_now is replaced by mtime
+* These dependecies are removed
+  * base 
+  * ppx_compare
+  * ppx_here
+* Tests are removed, because they looked like seriously broken
+* Js_of_ocaml support is removed (for simplicity)
+
+
 ** Introduction
 
 Expect-test is a framework for writing tests in OCaml, similar to [[https://bitheap.org/cram/][Cram]].
