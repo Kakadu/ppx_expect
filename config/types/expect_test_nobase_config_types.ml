@@ -1,7 +1,7 @@
 module type S = Expect_test_config_types_intf.S
 
-module type Expect_test_config_types =
-  Expect_test_config_types_intf.Expect_test_config_types
+module type Expect_test_nobase_config_types =
+  Expect_test_config_types_intf.Expect_test_nobase_config_types
 
 module Upon_unreleasable_issue = struct
   include Expect_test_config_types_intf.Upon_unreleasable_issue

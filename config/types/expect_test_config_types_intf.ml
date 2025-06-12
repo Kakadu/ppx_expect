@@ -25,13 +25,13 @@ module type S = sig
 end
 
 (** Configuration for running expect tests *)
-module type Expect_test_config_types = sig
+module type Expect_test_nobase_config_types = sig
   (** To configure expect_test, add the following at the top of your .ml file, or in some
       import.ml:
 
       {[
-        module Expect_test_config = struct
-          include Expect_test_config
+        module Expect_test_nobase_config = struct
+          include Expect_test_nobase_config
           let pre_redirect_hook () = ...
         end
       ]}

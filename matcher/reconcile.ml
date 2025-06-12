@@ -1,4 +1,4 @@
-open Expect_test_common
+open Expect_test_nobase_common
 open Sexplib0.Sexp_conv
 
 module Result = struct

@@ -2,8 +2,8 @@
  (name ppx_expect_evaluator)
  (public_name ppx_expect_nobase.evaluator)
  (libraries
-  expect_test_common
-  expect_test_collector
+  expect_test_nobase_common
+  expect_test_nobase_collector
   expect_test_matcher
   make_corrected_file
   ppxlib.print_diff)

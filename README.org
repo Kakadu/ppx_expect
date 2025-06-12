@@ -9,7 +9,7 @@ Changes:
 
 * time_now is replaced by mtime
 * These dependecies are removed
-  * base 
+  * base
   * ppx_compare
   * ppx_here
 * Tests are removed, because they looked like seriously broken
@@ -174,14 +174,14 @@ flushing =Stdlib.stdout= but it doesn't know about
 =Async.Writer.stdout=, =Lwt_io.stdout= or anything else.
 
 To deal with this, expect\_test provides some hooks in the form of a
-configuration module =Expect_test_config=. The default module in scope
+configuration module =Expect_test_nobase_config=. The default module in scope
 define no-op hooks that the user can override. =Async= redefines
 this module so when =Async= is opened you can write async-aware
 expect test.
 
-In addition to =Async.Expect_test_config=, there is an
-alternative, =Async.Expect_test_config_with_unit_expect=.  That is
-easier to use than =Async.Expect_test_config= because =[%expect]= has
+In addition to =Async.Expect_test_nobase_config=, there is an
+alternative, =Async.Expect_test_nobase_config_with_unit_expect=.  That is
+easier to use than =Async.Expect_test_nobase_config= because =[%expect]= has
 type =unit= rather than =unit Deferred.t=.  So one can write:
 
 #+begin_src ocaml
@@ -194,9 +194,9 @@ rather than:
 let%bind () = [%expect foo] in
 #+end_src
 
-=Expect_test_config_with_unit_expect= arrived in 2019-06.  We hope to
-transition from =Expect_test_config= to
-=Expect_test_config_with_unit_expect=, eventually renaming the latter
+=Expect_test_nobase_config_with_unit_expect= arrived in 2019-06.  We hope to
+transition from =Expect_test_nobase_config= to
+=Expect_test_nobase_config_with_unit_expect=, eventually renaming the latter
 as the former.
 
 *** LWT
@@ -215,8 +215,8 @@ module Lwt_io_flush = struct
   let to_run x = x
 end
 
-module Expect_test_config :
-  Expect_test_config_types.S
+module Expect_test_nobase_config :
+  Expect_test_nobase_config_types.S
     with module IO_run = Lwt_io_run
      and module IO_flush = Lwt_io_flush = struct
   module IO_run = Lwt_io_run

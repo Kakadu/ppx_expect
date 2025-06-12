@@ -4,7 +4,7 @@
  (kind ppx_rewriter)
  (ppx_runtime_libraries ppx_expect_nobase.collector ppx_expect_nobase.config)
  (libraries
-  expect_test_common
+  expect_test_nobase_common
   ppx_expect_payload
   ppxlib
   ppx_inline_test_nobase

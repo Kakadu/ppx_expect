@@ -5,8 +5,8 @@ let%expect_test "no sanitization" =
 
 let%test_module _ =
   (module struct
-    module Expect_test_config = struct
-      include Expect_test_config
+    module Expect_test_nobase_config = struct
+      include Expect_test_nobase_config
 
       let sanitize s = if s = "" then "" else "local module sanitize: " ^ s
     end
@@ -18,8 +18,8 @@ let%test_module _ =
   end)
 ;;
 
-module Expect_test_config = struct
-  include Expect_test_config
+module Expect_test_nobase_config = struct
+  include Expect_test_nobase_config
 
   let sanitize s = if s = "" then "" else "SANITIZED: " ^ s
 end

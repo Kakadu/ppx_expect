@@ -227,11 +227,11 @@ end = struct
   let of_string s =
     let expected_length = 32 in
     if String.length s <> expected_length
-    then invalid_arg "Expect_test_collector.File.Digest.of_string, unexpected length";
+    then invalid_arg "Expect_test_nobase_collector.File.Digest.of_string, unexpected length";
     for i = 0 to expected_length - 1 do
       match s.[i] with
       | '0' .. '9' | 'a' .. 'f' -> ()
-      | _ -> invalid_arg "Expect_test_collector.File.Digest.of_string"
+      | _ -> invalid_arg "Expect_test_nobase_collector.File.Digest.of_string"
     done;
     s
   ;;

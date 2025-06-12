@@ -1,5 +1,5 @@
 
-open Expect_test_common
+open Expect_test_nobase_common
 
 let bprintf = Printf.bprintf
 
@@ -83,7 +83,7 @@ module Test_outcome = struct
     ; saved_output : Saved_output.t File.Location_map.t
     ; trailing_output : Saved_output.t
     ; uncaught_exn : Saved_output.t option
-    ; upon_unreleasable_issue : Expect_test_config_types.Upon_unreleasable_issue.t
+    ; upon_unreleasable_issue : Expect_test_nobase_config_types.Upon_unreleasable_issue.t
     }
 
   let merge_exn
@@ -99,7 +99,7 @@ module Test_outcome = struct
     if not (Expectations.equal t.expectations expectations)
     then failwith "merging tests of different expectations";
     if not
-         (Expect_test_config_types.Upon_unreleasable_issue.equal
+         (Expect_test_nobase_config_types.Upon_unreleasable_issue.equal
             t.upon_unreleasable_issue
             upon_unreleasable_issue)
     then failwith "merging tests of different [Upon_unreleasable_issue]";
@@ -204,7 +204,7 @@ let evaluate_test
   =
   let cr_for_multiple_outputs ~cr_body outputs =
     let prefix =
-      Expect_test_config_types.Upon_unreleasable_issue.comment_prefix
+      Expect_test_nobase_config_types.Upon_unreleasable_issue.comment_prefix
         test.upon_unreleasable_issue
     in
     let cr = Printf.sprintf "(* %sexpect_test: %s *)" prefix cr_body in

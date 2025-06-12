@@ -1,4 +1,4 @@
-open Expect_test_common
+open Expect_test_nobase_common
 
 module Test_outcome : sig
   type t =
@@ -8,12 +8,12 @@ module Test_outcome : sig
     ; uncaught_exn_expectation : Expectation.Raw.t option
     ; saved_output : (File.Location.t * string) list
     ; trailing_output : string
-    ; upon_unreleasable_issue : Expect_test_config_types.Upon_unreleasable_issue.t
+    ; upon_unreleasable_issue : Expect_test_nobase_config_types.Upon_unreleasable_issue.t
     ; uncaught_exn : (exn * Printexc.raw_backtrace) option
     }
 end
 
-module Make (Config : Expect_test_config_types.S) : sig
+module Make (Config : Expect_test_nobase_config_types.S) : sig
   (** Collect the output that has been run since the last call to [save_output], or
       since the current expect-test started running.
 
@@ -26,14 +26,14 @@ module Make (Config : Expect_test_config_types.S) : sig
 
   (** Run an expect-test *)
   val run
-    :  file_digest:File.Digest.t
+    :  file_digest:Expect_test_nobase_common.File.Digest.t
     -> location:File.Location.t
     -> absolute_filename:string
     -> description:string option
     -> tags:string list
     -> expectations:Expectation.Raw.t list
     -> uncaught_exn_expectation:Expectation.Raw.t option
-    -> inline_test_config:Ppx_inline_test_lib.config
+    -> inline_test_config:Ppx_inline_test_nobase_lib.config
     -> (unit -> unit Config.IO.t)
     -> unit
 end

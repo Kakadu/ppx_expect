@@ -4,8 +4,8 @@
  (libraries
   re
   utils
-  expect_test_common
-  expect_test_config_types
+  expect_test_nobase_common
+  expect_test_nobase_config_types
   ppx_inline_test_nobase.runtime-lib)
  (preprocess no_preprocessing)
  (lint

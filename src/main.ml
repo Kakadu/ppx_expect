@@ -1,4 +1,4 @@
-open Expect_test_common
+open Expect_test_nobase_common
 open Ppxlib
 open Ast_builder.Default
 
@@ -9,14 +9,14 @@ let lift_location
   Merlin_helpers.hide_expression
     [%expr
       ({ filename =
-           Expect_test_common.File.Name.of_string
+           Expect_test_nobase_common.File.Name.of_string
              [%e estring ~loc (File.Name.to_string filename)]
        ; line_number = [%e eint ~loc line_number]
        ; line_start = [%e eint ~loc line_start]
        ; start_pos = [%e eint ~loc start_pos]
        ; end_pos = [%e eint ~loc end_pos]
        }
-       : Expect_test_common.File.Location.t)]
+       : Expect_test_nobase_common.File.Location.t)]
 ;;
 
 let eoption ~loc x =
@@ -42,7 +42,7 @@ let lift_expectation ~loc ({ tag; body; extid_location; body_location } : _ Expe
        ; extid_location = [%e lift_location ~loc extid_location]
        ; body_location = [%e lift_location ~loc body_location]
        }
-       : string Expect_test_common.Expectation.t)]
+       : string Expect_test_nobase_common.Expectation.t)]
 ;;
 
 (* Grab a list of all the output expressions *)
@@ -69,8 +69,8 @@ let replace_expects =
       | Some ext ->
         let f_var =
           match ext.body with
-          | Exact _ | Pretty _ | Unreachable -> "Expect_test_collector.save_output"
-          | Output -> "Expect_test_collector.save_and_return_output"
+          | Exact _ | Pretty _ | Unreachable -> "Expect_test_nobase_collector.save_output"
+          | Output -> "Expect_test_nobase_collector.save_and_return_output"
         in
         let expr =
           [%expr [%e evar ~loc f_var] [%e lift_location ~loc ext.extid_location]]
@@ -140,16 +140,16 @@ let rewrite_test_body ~descr ~tags ~uncaught_exn ~called_by_merlin pstr_loc body
     else file_digest loc.loc_start.pos_fname
   in
   [%expr
-    let module Expect_test_collector = Expect_test_collector.Make (Expect_test_config) in
-    Expect_test_collector.run
-      ~file_digest:(Expect_test_common.File.Digest.of_string [%e estring ~loc hash])
+    let module Expect_test_nobase_collector = Expect_test_nobase_collector.Make (Expect_test_nobase_config) in
+    Expect_test_nobase_collector.run
+      ~file_digest:(Expect_test_nobase_common.File.Digest.of_string [%e estring ~loc hash])
       ~location:[%e lift_location ~loc (Ppx_expect_payload.transl_loc pstr_loc)]
       ~absolute_filename:[%e estring ~loc absolute_filename]
       ~description:[%e estring_option ~loc descr]
       ~tags:[%e elist ~loc (List.map (estring ~loc) tags)]
       ~expectations:[%e expectations]
       ~uncaught_exn_expectation:[%e uncaught_exn]
-      ~inline_test_config:(module Inline_test_config)
+      ~inline_test_config:(module Inline_test_nobase_config)
       (fun () -> [%e body])]
 ;;
 
@@ -241,11 +241,11 @@ let () =
           maybe_drop
             loc
             [%expr
-              Expect_test_collector.Current_file.set
+              Expect_test_nobase_collector.Current_file.set
                 ~absolute_filename:[%e estring ~loc absolute_filename]]
         and footer =
           let loc = { loc with loc_start = loc.loc_end } in
-          maybe_drop loc [%expr Expect_test_collector.Current_file.unset ()]
+          maybe_drop loc [%expr Expect_test_nobase_collector.Current_file.unset ()]
         in
         header, footer)
 ;;

@@ -1,8 +1,8 @@
 open Utils
-open Expect_test_common
+open Expect_test_nobase_common
 open Expect_test_matcher
-module Test_result = Ppx_inline_test_lib.Test_result
-module Collector_test_outcome = Expect_test_collector.Test_outcome
+module Test_result = Ppx_inline_test_nobase_lib.Test_result
+module Collector_test_outcome = Expect_test_nobase_collector.Test_outcome
 
 type group =
   { filename : File.Name.t
@@ -41,7 +41,7 @@ let convert_collector_test ~allow_output_patterns (test : Collector_test_outcome
         (match Stdlib.Printexc.raw_backtrace_to_string bt with
          | "" -> exn
          | bt ->
-           Expect_test_config_types.Upon_unreleasable_issue
+           Expect_test_nobase_config_types.Upon_unreleasable_issue
            .message_when_expectation_contains_backtrace
              test.upon_unreleasable_issue
            ^ exn
@@ -79,7 +79,7 @@ let dir_seps = '/' :: (if Sys.win32 then [ '\\'; ':' ] else [])
 
 let resolve_filename filename =
   let relative_to =
-    match Ppx_inline_test_lib.source_tree_root () with
+    match Ppx_inline_test_nobase_lib.source_tree_root () with
     | None -> File.initial_dir ()
     | Some root ->
       if Stdlib.Filename.is_relative root
@@ -250,7 +250,7 @@ let evaluate_tests
       ~diff_path_prefix
       ~allow_output_patterns
   =
-  convert_collector_tests (Expect_test_collector.tests_run ()) ~allow_output_patterns
+  convert_collector_tests (Expect_test_nobase_collector.tests_run ()) ~allow_output_patterns
   |> ListLabels.map ~f:(fun group ->
     match
       process_group
@@ -277,11 +277,11 @@ let evaluate_tests
 ;;
 
 let () =
-  Ppx_inline_test_lib.add_evaluator ~f:(fun () ->
+  Ppx_inline_test_nobase_lib.add_evaluator ~f:(fun () ->
     evaluate_tests
-      ~use_color:(Ppx_inline_test_lib.use_color())
-      ~in_place:(Ppx_inline_test_lib.in_place())
-      ~diff_command:(Ppx_inline_test_lib.diff_command())
-      ~diff_path_prefix:(Ppx_inline_test_lib.diff_path_prefix())
+      ~use_color:(Ppx_inline_test_nobase_lib.use_color())
+      ~in_place:(Ppx_inline_test_nobase_lib.in_place())
+      ~diff_command:(Ppx_inline_test_nobase_lib.diff_command())
+      ~diff_path_prefix:(Ppx_inline_test_nobase_lib.diff_path_prefix())
       ~allow_output_patterns:false)
 ;;

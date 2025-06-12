@@ -1,5 +1,5 @@
 {
-  open Expect_test_common
+  open Expect_test_nobase_common
   open Sexplib0.Sexp_conv
 
   let escaped s =
@@ -122,7 +122,7 @@ and quoted_string_terminators acc = parse
         ~f:(fun s () ->
           parse_pretty_line ~allow_output_patterns s)
     in
-    (match Ppx_inline_test_lib.testing with
+    (match Ppx_inline_test_nobase_lib.testing with
     | `Testing `Am_test_runner ->
       let cst = Cst.to_string res in
       if not (String.equal cst s)

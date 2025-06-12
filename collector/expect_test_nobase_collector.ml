@@ -1,4 +1,4 @@
-open Expect_test_common
+open Expect_test_nobase_common
 module List = ListLabels
 
 module Test_outcome = struct
@@ -9,7 +9,7 @@ module Test_outcome = struct
     ; uncaught_exn_expectation : Expectation.Raw.t option
     ; saved_output : (File.Location.t * string) list
     ; trailing_output : string
-    ; upon_unreleasable_issue : Expect_test_config_types.Upon_unreleasable_issue.t
+    ; upon_unreleasable_issue : Expect_test_nobase_config_types.Upon_unreleasable_issue.t
     ; uncaught_exn : (exn * Printexc.raw_backtrace) option
     }
 end
@@ -32,19 +32,19 @@ module Current_file = struct
   let set ~absolute_filename =
     match !current with
     | None -> current := Some absolute_filename
-    | Some _ -> failwith "Expect_test_collector.set: already set"
+    | Some _ -> failwith "Expect_test_nobase_collector.set: already set"
   ;;
 
   let unset () =
     match !current with
     | Some _ -> current := None
-    | None -> failwith "Expect_test_collector.unset: not set"
+    | None -> failwith "Expect_test_nobase_collector.unset: not set"
   ;;
 
   let get () =
     match !current with
     | Some fn -> fn
-    | None -> failwith "Expect_test_collector.get: not set"
+    | None -> failwith "Expect_test_nobase_collector.get: not set"
   ;;
 end
 
@@ -92,7 +92,7 @@ module Instance = struct
   let get_current () =
     match !current_test with
     | Some (_, t) -> t
-    | None -> failwith "Expect_test_collector.Instance.get_current called outside a test."
+    | None -> failwith "Expect_test_nobase_collector.Instance.get_current called outside a test."
   ;;
 
   let save_output_without_flush t location =
@@ -131,7 +131,7 @@ let save_and_return_output location =
   Instance.save_and_return_output_without_flush instance location
 ;;
 
-module Make (C : Expect_test_config_types.S) = struct
+module Make (C : Expect_test_nobase_config_types.S) = struct
   module Instance_io : sig
     val save_output : File.Location.t -> unit
     val save_and_return_output : File.Location.t -> string
@@ -151,7 +151,7 @@ module Make (C : Expect_test_config_types.S) = struct
       if not (Check_backtraces.contains_backtraces s)
       then s
       else
-        Expect_test_config_types.Upon_unreleasable_issue
+        Expect_test_nobase_config_types.Upon_unreleasable_issue
         .message_when_expectation_contains_backtrace
           C.upon_unreleasable_issue
         ^ s
@@ -253,7 +253,7 @@ module Make (C : Expect_test_config_types.S) = struct
         ~inline_test_config
         f
     =
-    Ppx_inline_test_lib.test
+    Ppx_inline_test_nobase_lib.test
       ~config:inline_test_config
       ~descr:
         (lazy

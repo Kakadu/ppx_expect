@@ -1,5 +1,5 @@
 (library
- (name expect_test_common)
+ (name expect_test_nobase_common)
  (public_name ppx_expect_nobase.common)
  (synopsis "Shared parts for ppx_expect")
  (libraries

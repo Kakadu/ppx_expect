@@ -1,7 +1,7 @@
 
 open Ppx_compare_lib.Builtin
 open Ppx_sexp_conv_lib.Conv
-open Expect_test_common
+open Expect_test_nobase_common
 open Expect_test_matcher
 
 (* [matcher/lexer.mll] checks for escaped newlines. *)

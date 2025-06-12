@@ -1,6 +1,6 @@
 (** Determine whether a test's output matches its expected output. *)
 
-open Expect_test_common
+open Expect_test_nobase_common
 
 module Result : sig
   type 'a t =

@@ -1,5 +1,5 @@
-module Expect_test_config = struct
-  include Expect_test_config
+module Expect_test_nobase_config = struct
+  include Expect_test_nobase_config
 
   let upon_unreleasable_issue = `Warning_for_collector_testing
 end
