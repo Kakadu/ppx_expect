@@ -13,7 +13,7 @@ depends: [
   "ocaml" {>= "4.14.0"}
   #"base"
   "ppx_here"
-  "ppx_inline_test"
+  "ppx_inline_test_nobase"
   #"stdio"
   "dune"            {>= "2.0.0"}
   "ppxlib"          {>= "0.28.0"}
