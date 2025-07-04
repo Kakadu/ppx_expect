@@ -1,3 +1,8 @@
+## Release v0.17.0+nobase-2
+
+* Depend on ppx_inline_test_nobase v0.17.0+nobase-2
+* Rename many submodules to allow linking with upstream ppx_expect
+
 ## Release v0.17.0+nobase
 
 Many dependecies are removed
