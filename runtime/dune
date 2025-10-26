@@ -2,8 +2,8 @@
  (foreign_stubs
   (language c)
   (names ppx_expect_runtime_stubs))
- (name ppx_expect_runtime)
- (public_name ppx_expect.runtime)
+ (name ppx_expect_nobase_runtime)
+ (public_name ppx_expect_nobase.runtime)
  (libraries
   wrappers
   ; base

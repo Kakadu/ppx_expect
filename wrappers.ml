@@ -35,6 +35,24 @@ end
 module List = struct
   include ListLabels
 
+  let take_while ~f:p l =
+    let[@tail_mod_cons] rec aux = function
+      | x :: l when p x -> x :: aux l
+      | _rest -> []
+    in
+    aux l
+  ;;
+
+  let rec drop_while ~f:p = function
+    | x :: l when p x -> drop_while ~f:p l
+    | rest -> rest
+  ;;
+
+  let is_empty = function
+    | [] -> true
+    | _ -> false
+  ;;
+
   let min_elt ~compare = function
     | [] -> None
     | h :: tl ->
@@ -148,7 +166,7 @@ module String = struct
         let eol = ref n in
         let ac = ref [] in
         (* We treat the end of the string specially, because if the string ends with a
-         newline, we don't want an extra empty string at the end of the output. *)
+           newline, we don't want an extra empty string at the end of the output. *)
         if Char.equal t.[!pos] '\n' then back_up_at_newline ~t ~pos ~eol;
         while !pos >= 0 do
           if Char.( <> ) t.[!pos] '\n'
@@ -261,8 +279,8 @@ module Queue = struct
     List.rev !acc
   ;;
   (* let result = ref [] in
-    for i = t.length - 1 downto 0 do
-      result := unsafe_get t i :: !result
-    done;
-    !result *)
+     for i = t.length - 1 downto 0 do
+     result := unsafe_get t i :: !result
+     done;
+     !result *)
 end

@@ -1,6 +1,6 @@
 (library
  (name ppx_expect_evaluator)
- (public_name ppx_expect.evaluator)
+ (public_name ppx_expect_nobase.evaluator)
  (libraries)
  (preprocess no_preprocessing)
  (library_flags -linkall))

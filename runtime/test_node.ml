@@ -155,9 +155,9 @@ type 'behavior inner =
 type t = T : 'behavior inner -> t
 
 let to_correction
-      ~expect_node_formatting
-      ~cr_for_multiple_outputs
-      (T (Test { expectation; results; reached_this_run = _ }))
+  ~expect_node_formatting
+  ~cr_for_multiple_outputs
+  (T (Test { expectation; results; reached_this_run = _ }))
   : Correction.t option
   =
   let results_list = Queue.to_list results in
@@ -222,11 +222,11 @@ let to_correction
 ;;
 
 let record_and_return_result
-      (type behavior)
-      ~expect_node_formatting
-      ~failure_ref
-      ~test_output_raw
-      (Test ({ expectation; results; reached_this_run = _ } as t) : behavior inner)
+  (type behavior)
+  ~expect_node_formatting
+  ~failure_ref
+  ~test_output_raw
+  (Test ({ expectation; results; reached_this_run = _ } as t) : behavior inner)
   =
   let test_output =
     Output.Formatter.apply
@@ -273,8 +273,10 @@ module Global_results_table = struct
 
   module Merge_into_action = struct
     type 'a t =
-      | Remove [@ocaml.warning "-37"]
+      | Remove
       | Set_to of 'a
+
+    let _ = Remove
   end
 
   module Hashtbl = struct
@@ -300,17 +302,15 @@ module Global_results_table = struct
     ;;
 
     let merge_into
-      :  src:('k, 'a) t
-      -> dst:('k, 'b) t
-      -> f:(key:'k -> 'a -> 'b option -> 'b Merge_into_action.t)
-      -> unit
+      :  src:('k, 'a) t -> dst:('k, 'b) t
+      -> f:(key:'k -> 'a -> 'b option -> 'b Merge_into_action.t) -> unit
       =
       fun ~src ~dst ~f ->
       iter
         (fun key v ->
-           match f ~key v (find_opt dst key) with
-           | Remove -> remove dst key
-           | Set_to a -> replace dst key a)
+          match f ~key v (find_opt dst key) with
+          | Remove -> remove dst key
+          | Set_to a -> replace dst key a)
         src
     ;;
 
@@ -391,10 +391,10 @@ module For_mlt = struct
   ;;
 
   let record_and_return_number_of_lines_in_correction
-        ~expect_node_formatting
-        ~failure_ref
-        ~test_output_raw
-        (T (Test inner))
+    ~expect_node_formatting
+    ~failure_ref
+    ~test_output_raw
+    (T (Test inner))
     =
     match
       record_and_return_result

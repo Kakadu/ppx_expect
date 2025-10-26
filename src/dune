@@ -1,14 +1,14 @@
 (library
- (name ppx_expect)
- (public_name ppx_expect)
+ (name ppx_expect_nobase)
+ (public_name ppx_expect_nobase)
  (kind ppx_rewriter)
  (libraries
   ppxlib
-  ppx_expect_runtime
+  ppx_expect_nobase.runtime
   ppx_inline_test_nobase
   ppx_inline_test_nobase.libname
   ppx_here.expander)
- (ppx_runtime_libraries ppx_expect.runtime ppx_expect.config)
+ (ppx_runtime_libraries ppx_expect_nobase.runtime ppx_expect.config)
  (preprocess
   (pps ppxlib.metaquot))
  (inline_tests.backend

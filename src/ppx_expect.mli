@@ -1,5 +1,5 @@
 open Ppxlib
-open Ppx_expect_runtime
+open Ppx_expect_nobase_runtime
 
 val compact_loc_of_ppxlib_location : location -> Compact_loc.t
 

@@ -1,6 +1,6 @@
 open Ppxlib
 open Ast_builder.Default
-open Ppx_expect_runtime
+open Ppx_expect_nobase_runtime
 
 let strict_indent = ref false
 
