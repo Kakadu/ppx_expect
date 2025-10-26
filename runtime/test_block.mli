@@ -3,7 +3,7 @@ open Wrappers
 
 (** Functor for building the runtime representation of a [let%expect_test] block *)
 
-module Make (C : Expect_test_config_types.S) : sig
+module Make (C : Expect_test_nobase_config_types.S) : sig
   (** Read test output, passing it through the configured sanitization function but not
       checking for backtraces. Equivalent to [[%expect.output]].
 

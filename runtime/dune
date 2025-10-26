@@ -7,10 +7,10 @@
  (libraries
   wrappers
   ; base
-  ;stdio
+  ; stdio
   ppx_inline_test_nobase.runtime-lib
-  make_corrected_file
-  expect_test_config)
+  make_corrected_file_nobase
+  expect_test_nobase_config)
  (js_of_ocaml
   (javascript_files runtime.js))
  (preprocess no_preprocessing))

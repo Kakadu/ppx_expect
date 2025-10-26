@@ -77,7 +77,7 @@ let f ~use_color ~in_place ~diff_command ~diff_path_prefix ~filename ~with_ corr
            ~temp_dir:(Stdlib.Filename.dirname filename)
        in
        (match
-          Make_corrected_file.f
+          Make_corrected_file_nobase.f
             ~use_color
             ?diff_command
             ?diff_path_prefix
