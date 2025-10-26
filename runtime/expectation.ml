@@ -1,4 +1,4 @@
-open! Base
+open Wrappers
 open Types
 include Expectation_intf.Definitions
 
@@ -12,27 +12,27 @@ module Insert_loc = struct
 end
 
 let with_behavior
-  { position
-  ; behavior = _
-  ; payload_type
-  ; on_incorrect_output
-  ; inconsistent_outputs_message
-  }
-  behavior
+      { position
+      ; behavior = _
+      ; payload_type
+      ; on_incorrect_output
+      ; inconsistent_outputs_message
+      }
+      behavior
   =
   { position; behavior; payload_type; on_incorrect_output; inconsistent_outputs_message }
 ;;
 
 let formatter
-  (type behavior)
-  ~(expect_node_formatting : Expect_node_formatting.t)
-  ({ position
-   ; behavior
-   ; payload_type
-   ; on_incorrect_output = T on_incorrect_output
-   ; inconsistent_outputs_message = _
-   } :
-    behavior t)
+      (type behavior)
+      ~(expect_node_formatting : Expect_node_formatting.t)
+      ({ position
+       ; behavior
+       ; payload_type
+       ; on_incorrect_output = T on_incorrect_output
+       ; inconsistent_outputs_message = _
+       } :
+        behavior t)
   =
   let count_leading_spaces line =
     line |> String.to_list |> List.take_while ~f:(Char.( = ) ' ') |> List.length
@@ -67,8 +67,8 @@ let formatter
         match
           indent_and_contents
           |> List.filter_map ~f:(function
-               | _indent, "" -> None
-               | indent, _ -> Some indent)
+            | _indent, "" -> None
+            | indent, _ -> Some indent)
           |> List.min_elt ~compare:Int.compare
         with
         | None -> []
@@ -109,9 +109,9 @@ let formatter
              start_pos
              - start_bol
              +
-             (match on_incorrect_output.kind with
-              | Extension -> expect_node_formatting.indent
-              | Attribute -> 0)
+               (match on_incorrect_output.kind with
+               | Extension -> expect_node_formatting.indent
+               | Attribute -> 0)
          in
          let spaces n = String.make n ' ' in
          let first_line, indentation, last_line =
@@ -141,13 +141,13 @@ let extension_syntax extension_name ~payload_loc ~node_loc =
     (* An extension point whose payload location contains the location of the entire
        extension point is using the "shorthand" syntax. *)
     (T { name = extension_name; kind = Extension; hand = Shorthand }
-      : String_node_format.Shape.t)
+     : String_node_format.Shape.t)
   | _ -> T { name = extension_name; kind = Extension; hand = Longhand }
 ;;
 
 let possibly_relax_strictness
-  ~(formatting_flexibility : Expect_node_formatting.Flexibility.t)
-  (t : [ `Expect ] t)
+      ~(formatting_flexibility : Expect_node_formatting.Flexibility.t)
+      (t : [ `Expect ] t)
   =
   match formatting_flexibility with
   | Exactly_formatted -> t

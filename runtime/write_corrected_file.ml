@@ -1,50 +1,5 @@
-(* open! Base *)
+open Wrappers
 open Types
-
-module Comparable = struct
-  let lift cmp ~f x y = cmp (f x) (f y)
-end
-
-module List = struct
-  include ListLabels
-
-  let fold_map t ~init ~f =
-    let acc = ref init in
-    let result =
-      map t ~f:(fun x ->
-        let new_acc, y = f !acc x in
-        acc := new_acc;
-        y)
-    in
-    !acc, result
-  ;;
-
-  let sort l ~compare = Stdlib.ListLabels.sort l ~cmp:compare
-end
-
-module String_ = struct
-  include String
-
-  [@@@warning "-32"]
-
-  let sub = StringLabels.sub
-
-  let subo ?(pos = 0) ?len src =
-    sub
-      src
-      ~pos
-      ~len:
-        (match len with
-         | Some i -> i
-         | None -> length src - pos)
-  ;;
-
-  let sub = Base.String.sub
-  let subo = Base.String.subo
-  let concat ?(sep = "") xs = String.concat sep xs
-end
-
-module String = Base.String
 
 let write_all filename ~data =
   Stdlib.Out_channel.with_open_text filename (fun ch -> Stdlib.output_string ch data)

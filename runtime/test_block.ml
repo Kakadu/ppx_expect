@@ -1,42 +1,9 @@
+open Wrappers
 open Types
-module List = ListLabels
-
-module Source_code_position = struct
-  type t = Lexing.position
-
-  (* This is the same function as Ppx_here.lift_position_as_string. *)
-  let make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol =
-    String.concat
-      ""
-      [ pos_fname; ":"; Int.to_string pos_lnum; ":"; Int.to_string (pos_cnum - pos_bol) ]
-  ;;
-
-  let to_string { Stdlib.Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol } =
-    make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol
-  ;;
-end
-
-module String = struct
-  include StringLabels
-
-  let strip = trim
-end
 
 let raise_s s = failwith (Sexplib0.Sexp.to_string_hum s)
 let sexp_of_string = Sexplib0.Sexp_conv.sexp_of_string
 let sexp_of_int = Sexplib0.Sexp_conv.sexp_of_int
-
-module Option = struct
-  include Option
-
-  let map x ~f = map f x
-  let value_exn = get
-
-  let iter ~f = function
-    | Some x -> f x
-    | None -> ()
-  ;;
-end
 
 (* [Shared] and [Configured] primarily contain boilerplate involving the FFI and printing
    [CR]s. The interesting logic is in [Make]. *)
@@ -171,7 +138,7 @@ module Configured (C : Expect_test_config_types.S) = struct
   let check_for_backtraces s =
     if
       List.exists
-        ~f:(fun substring -> Base.String.is_substring ~substring s)
+        ~f:(fun substring -> String.is_substring ~substring s)
         [ "Raised at "; "Called from "; "Raised by primitive operation " ]
     then cr_for_backtrace ^ "\n\n" ^ s
     else s

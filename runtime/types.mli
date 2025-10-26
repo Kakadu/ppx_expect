@@ -1,5 +1,3 @@
-open! Base
-
 module Expect_node_formatting : sig
   (** Configurations for the formatting of rewritten expect nodes and attributes. The
       values in [default] are used by [ppx_expect], but different values can be used by
@@ -105,9 +103,8 @@ module Expectation_id : sig
       [[%expect]] for trailing output) is associated with a unique [t]. *)
   type t
 
-  include Intable.S with type t := t
-  include Hashable.Key with type t := t
-
+  val of_int_exn : int -> t
+  val to_int_exn : t -> int
   val equal : t -> t -> bool
 
   (** Create a new [t]. Calls to [mint] will give distinct ids, but uniqueness is not

@@ -1,4 +1,4 @@
-open! Base
+open Wrappers
 
 module Compact_loc = struct
   type t =
@@ -51,6 +51,9 @@ end
 
 module Expectation_id = struct
   include Int
+
+  let of_int_exn = Fun.id
+  let to_int_exn = Fun.id
 
   let mint =
     let counter = ref 0 in

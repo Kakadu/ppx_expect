@@ -1,9 +1,5 @@
-open! Base
 open Types
-
-module Source_code_position : sig
-  type t = Lexing.position
-end
+open Wrappers
 
 (** Functor for building the runtime representation of a [let%expect_test] block *)
 
@@ -65,7 +61,7 @@ module Make (C : Expect_test_config_types.S) : sig
          (** Test tags from the LHS of the [let%expect_test] binding; passed to
              [Ppx_inline_test_lib]. *)
     -> inline_test_config:Ppx_inline_test_nobase_lib.config
-    -> expectations:(Expectation_id.t, Test_node.t) List.Assoc.t
+    -> expectations:(Expectation_id.t * Test_node.t) List.t
          (** An assoc list from unique IDs to [Test_node.t]s. These tests are registered in a
              global map for reachability checks. [Test_node.t]s are subsequently handled by
              their ID. *)

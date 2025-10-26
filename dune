@@ -1,0 +1,6 @@
+(library
+ (name wrappers)
+ (public_name ppx_expect.wrappers)
+ (wrapped false)
+ (modules Wrappers Search_patternW)
+ (libraries))

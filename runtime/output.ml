@@ -1,38 +1,4 @@
-module String = struct
-  include StringLabels
-
-  let rec char_list_mem l (c : char) =
-    match l with
-    | [] -> false
-    | hd :: tl -> Char.equal hd c || char_list_mem tl c
-  ;;
-
-  let split_gen str ~on =
-    let is_delim =
-      match on with
-      | `char c' -> fun c -> Char.equal c c'
-      | `char_list l -> fun c -> char_list_mem l c
-    in
-    let len = String.length str in
-    let rec loop acc last_pos pos =
-      if pos = -1
-      then sub str ~pos:0 ~len:last_pos :: acc
-      else if is_delim str.[pos]
-      then (
-        let pos1 = pos + 1 in
-        let sub_str = sub str ~pos:pos1 ~len:(last_pos - pos1) in
-        loop (sub_str :: acc) pos (pos - 1))
-      else loop acc last_pos (pos - 1)
-    in
-    loop [] len (len - 1)
-  ;;
-
-  let split_on_char str ~on = split_gen str ~on:(`char on)
-
-  (* let split str ~on = split_gen str ~on:(`char on) *)
-  (* let split str ~on:chars = split_gen str ~on:(`char_list chars) *)
-end
-
+open Wrappers
 open Types
 
 module Type = struct
@@ -84,8 +50,8 @@ module Payload = struct
     let escape_lines test_output =
       test_output
       |> String.split_on_char ~on:'\n'
-      |> List.map String.escaped
-      |> StringLabels.concat ~sep:"\n"
+      |> List.map ~f:String.escaped
+      |> String.concat ~sep:"\n"
     in
     match tag with
     | T (Tag tag) -> Printf.sprintf "{%s|%s|%s}" tag contents tag
@@ -107,7 +73,7 @@ let fix_delimiter_conflicts
   =
   let rec fix_tag_conflicts ~contents ~tag =
     let tag_conflicts_with fstr =
-      Base.String.is_substring ~substring:(Printf.sprintf fstr tag) contents
+      String.is_substring ~substring:(Printf.sprintf fstr tag) contents
     in
     if tag_conflicts_with "{%s|" || tag_conflicts_with "|%s}"
     then fix_tag_conflicts ~contents ~tag:(tag ^ "xxx")

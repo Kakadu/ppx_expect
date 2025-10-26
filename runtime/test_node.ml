@@ -1,71 +1,5 @@
 open Types
-module Queue = Base.Queue
-
-module Comparable = struct
-  let lift cmp ~f x y = cmp (f x) (f y)
-end
-
-module List = struct
-  include ListLabels
-
-  (* returns list without adjacent duplicates *)
-  let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
-    let rec loop to_keep accum = function
-      | [] -> to_keep :: accum
-      | hd :: tl ->
-        if equal hd to_keep
-        then (
-          let to_keep =
-            match which_to_keep with
-            | `First -> to_keep
-            | `Last -> hd
-          in
-          loop to_keep accum tl)
-        else loop hd (to_keep :: accum) tl
-    in
-    match list with
-    | [] -> []
-    | hd :: tl -> rev (loop hd [] tl)
-  ;;
-
-  (** returns sorted version of list with duplicates removed *)
-  let dedup_and_sort list ~compare =
-    match list with
-    | [] | [ _ ] -> list (* performance hack *)
-    | _ ->
-      let equal x x' = compare x x' = 0 in
-      let sorted = sort ~cmp:compare list in
-      (remove_consecutive_duplicates ~equal sorted [@nontail])
-  ;;
-
-  let sort ~compare = ListLabels.sort ~cmp:compare
-end
-
-module Option = struct
-  let to_list = function
-    | Some x -> [ x ]
-    | None -> []
-  ;;
-
-  let bind x ~f = Option.bind x f
-
-  (* let value_exn ~error = function
-    | Some x -> x
-    | None -> error
-  ;; *)
-
-  let value x ~default =
-    match x with
-    | Some x -> x
-    | None -> default
-  ;;
-end
-
-module String = struct
-  include String
-
-  let count = Base.String.count
-end
+open Wrappers
 
 module Correction = struct
   type t =
@@ -213,7 +147,7 @@ type one_run =
 type 'behavior inner =
   | Test :
       { expectation : ([< Expectation.Behavior_type.t ] as 'behavior) Expectation.t
-      ; results : one_run Base.Queue.t
+      ; results : one_run Queue.t
       ; mutable reached_this_run : bool
       }
       -> 'behavior inner
@@ -226,7 +160,7 @@ let to_correction
       (T (Test { expectation; results; reached_this_run = _ }))
   : Correction.t option
   =
-  let results_list = Base.Queue.to_list results in
+  let results_list = Queue.to_list results in
   let unreached_list, outputs_list =
     List.partition_map results_list ~f:(function
       | Did_not_reach -> Either.Left ()

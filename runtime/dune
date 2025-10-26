@@ -5,6 +5,7 @@
  (name ppx_expect_runtime)
  (public_name ppx_expect.runtime)
  (libraries
+  wrappers
   ; base
   ;stdio
   ppx_inline_test_nobase.runtime-lib
