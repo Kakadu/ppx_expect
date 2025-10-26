@@ -1,4 +1,3 @@
-open! Base
 open Ppxlib
 open Ast_builder.Default
 open Ppx_expect_runtime
@@ -21,7 +20,7 @@ module Expr = struct
          match delimiter with
          | T Quote -> [%expr T Quote]
          | T (Tag tag) -> [%expr T (Tag [%e estring ~loc tag])]]
-        : Ppx_expect_runtime.Delimiter.t)]
+       : Ppx_expect_runtime.Delimiter.t)]
   ;;
 
   let id ~loc id =
@@ -43,7 +42,8 @@ module Expr = struct
   ;;
 
   let id_expr_alist ~loc alist =
-    List.map alist ~f:(fun (expect_id, expr) -> [%expr [%e id ~loc expect_id], [%e expr]])
+    ListLabels.map alist ~f:(fun (expect_id, expr) ->
+      [%expr [%e id ~loc expect_id], [%e expr]])
     |> elist ~loc
   ;;
 
@@ -133,7 +133,7 @@ module Parsed_node = struct
       Expression
       (Pattern.maybe_string ())
       (fun ~located_payload node_loc ->
-      Expectation_node (Expectation_id.mint (), Expect { located_payload; node_loc }))
+         Expectation_node (Expectation_id.mint (), Expect { located_payload; node_loc }))
   ;;
 
   let expect_exact =
@@ -142,7 +142,8 @@ module Parsed_node = struct
       Expression
       (Pattern.maybe_string ())
       (fun ~located_payload node_loc ->
-      Expectation_node (Expectation_id.mint (), Expect_exact { located_payload; node_loc }))
+         Expectation_node
+           (Expectation_id.mint (), Expect_exact { located_payload; node_loc }))
   ;;
 
   let expect_output =
@@ -156,7 +157,7 @@ module Parsed_node = struct
       Expression
       (Pattern.empty ())
       (fun compact_loc ->
-      Expectation_node (Expectation_id.mint (), Expect_unreachable compact_loc))
+         Expectation_node (Expectation_id.mint (), Expect_unreachable compact_loc))
   ;;
 
   let expectations = [ expect; expect_exact; expect_output; expect_unreachable ]
@@ -173,7 +174,7 @@ let is_a_ppx_expect_ext_node e = Option.is_some (Parsed_node.match_expectation e
 
 let replace_and_collect_expects =
   object
-    inherit [(Expectation_id.t, expression) List.Assoc.t] Ast_traverse.fold_map as super
+    inherit [(Expectation_id.t * expression) list] Ast_traverse.fold_map as super
 
     method! expression ({ pexp_attributes; pexp_loc = loc; _ } as expr) acc =
       match Parsed_node.match_expectation expr with
@@ -204,7 +205,7 @@ let transform_let_expect ~trailing_location ~tags ~expected_exn ~description ~lo
   let trailing_test_id = Expectation_id.mint () in
   let exn_test_id = Expectation_id.mint () in
   [%expr
-    match Ppx_inline_test_lib.testing with
+    match Ppx_inline_test_nobase_lib.testing with
     | `Not_testing -> ()
     | `Testing _ ->
       let module Ppx_expect_test_block =
@@ -221,8 +222,8 @@ let transform_let_expect ~trailing_location ~tags ~expected_exn ~description ~lo
         ~trailing_test_id:[%e Expr.id ~loc trailing_test_id]
         ~exn_test_id:[%e Expr.id ~loc exn_test_id]
         ~description:[%e Expr.option estring ~loc description]
-        ~tags:[%e tags |> List.map ~f:(estring ~loc) |> elist ~loc]
-        ~inline_test_config:(module Inline_test_config)
+        ~tags:[%e tags |> List.map (estring ~loc) |> elist ~loc]
+        ~inline_test_config:(module Inline_test_nobase_config)
         ~expectations:
           [%e Merlin_helpers.hide_expression (Expr.id_expr_alist ~loc expectations)]
         (fun () -> [%e body])]
@@ -246,8 +247,7 @@ let let_expect_pat =
        nonrecursive
        (Attribute.pattern
           uncaught_exn
-          (value_binding
-             ~constraint_:drop
+          (value_binding (* ~constraint_:drop *)
              ~pat:
                (map
                   (Attribute.pattern Ppx_inline_test.tags opt_name)
@@ -263,25 +263,25 @@ let expect_test =
     Structure_item
     let_expect_pat
     (fun ~ctxt trailing ~tags ~name code ->
-    let loc = Ppxlib.Expansion_context.Extension.extension_point_loc ctxt in
-    let loc = { loc with loc_ghost = true } in
-    let trailing_location, expected_exn =
-      match trailing with
-      | Some (attr_loc, expected_exn) -> attr_loc, expected_exn
-      | None -> { loc with loc_start = loc.loc_end }, None
-    in
-    Ppx_inline_test.validate_extension_point_exn
-      ~name_of_ppx_rewriter:"ppx_expect"
-      ~loc
-      ~tags;
-    transform_let_expect
-      ~trailing_location
-      ~tags
-      ~expected_exn
-      ~description:name
-      ~loc
-      code
-    |> Ppx_inline_test.maybe_drop loc)
+       let loc = Ppxlib.Expansion_context.Extension.extension_point_loc ctxt in
+       let loc = { loc with loc_ghost = true } in
+       let trailing_location, expected_exn =
+         match trailing with
+         | Some (attr_loc, expected_exn) -> attr_loc, expected_exn
+         | None -> { loc with loc_start = loc.loc_end }, None
+       in
+       Ppx_inline_test.validate_extension_point_exn
+         ~name_of_ppx_rewriter:"ppx_expect"
+         ~loc
+         ~tags;
+       transform_let_expect
+         ~trailing_location
+         ~tags
+         ~expected_exn
+         ~description:name
+         ~loc
+         code
+       |> Ppx_inline_test.maybe_drop loc)
 ;;
 
 let () =

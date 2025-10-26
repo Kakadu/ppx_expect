@@ -1,5 +1,71 @@
-open! Base
 open Types
+module Queue = Base.Queue
+
+module Comparable = struct
+  let lift cmp ~f x y = cmp (f x) (f y)
+end
+
+module List = struct
+  include ListLabels
+
+  (* returns list without adjacent duplicates *)
+  let remove_consecutive_duplicates ?(which_to_keep = `Last) list ~equal =
+    let rec loop to_keep accum = function
+      | [] -> to_keep :: accum
+      | hd :: tl ->
+        if equal hd to_keep
+        then (
+          let to_keep =
+            match which_to_keep with
+            | `First -> to_keep
+            | `Last -> hd
+          in
+          loop to_keep accum tl)
+        else loop hd (to_keep :: accum) tl
+    in
+    match list with
+    | [] -> []
+    | hd :: tl -> rev (loop hd [] tl)
+  ;;
+
+  (** returns sorted version of list with duplicates removed *)
+  let dedup_and_sort list ~compare =
+    match list with
+    | [] | [ _ ] -> list (* performance hack *)
+    | _ ->
+      let equal x x' = compare x x' = 0 in
+      let sorted = sort ~cmp:compare list in
+      (remove_consecutive_duplicates ~equal sorted [@nontail])
+  ;;
+
+  let sort ~compare = ListLabels.sort ~cmp:compare
+end
+
+module Option = struct
+  let to_list = function
+    | Some x -> [ x ]
+    | None -> []
+  ;;
+
+  let bind x ~f = Option.bind x f
+
+  (* let value_exn ~error = function
+    | Some x -> x
+    | None -> error
+  ;; *)
+
+  let value x ~default =
+    match x with
+    | Some x -> x
+    | None -> default
+  ;;
+end
+
+module String = struct
+  include String
+
+  let count = Base.String.count
+end
 
 module Correction = struct
   type t =
@@ -147,7 +213,7 @@ type one_run =
 type 'behavior inner =
   | Test :
       { expectation : ([< Expectation.Behavior_type.t ] as 'behavior) Expectation.t
-      ; results : one_run Queue.t
+      ; results : one_run Base.Queue.t
       ; mutable reached_this_run : bool
       }
       -> 'behavior inner
@@ -155,16 +221,16 @@ type 'behavior inner =
 type t = T : 'behavior inner -> t
 
 let to_correction
-  ~expect_node_formatting
-  ~cr_for_multiple_outputs
-  (T (Test { expectation; results; reached_this_run = _ }))
+      ~expect_node_formatting
+      ~cr_for_multiple_outputs
+      (T (Test { expectation; results; reached_this_run = _ }))
   : Correction.t option
   =
-  let results_list = Queue.to_list results in
+  let results_list = Base.Queue.to_list results in
   let unreached_list, outputs_list =
     List.partition_map results_list ~f:(function
-      | Did_not_reach -> First ()
-      | Reached_with_output output -> Second output)
+      | Did_not_reach -> Either.Left ()
+      | Reached_with_output output -> Either.Right output)
   in
   let distinct_outputs =
     (* Allow distinct raw outputs as long as their formatted [result]s
@@ -209,11 +275,11 @@ let to_correction
     let outputs =
       results_list
       |> List.map ~f:(function
-           | Reached_with_output { raw; _ } -> raw
-           | Did_not_reach ->
-             Printf.sprintf
-               "<expect test ran without %s>"
-               expectation.inconsistent_outputs_message)
+        | Reached_with_output { raw; _ } -> raw
+        | Did_not_reach ->
+          Printf.sprintf
+            "<expect test ran without %s>"
+            expectation.inconsistent_outputs_message)
     in
     cr_for_multiple_outputs ~output_name:expectation.inconsistent_outputs_message ~outputs
     |> Output.Formatter.apply (Expectation.formatter ~expect_node_formatting expectation)
@@ -222,11 +288,11 @@ let to_correction
 ;;
 
 let record_and_return_result
-  (type behavior)
-  ~expect_node_formatting
-  ~failure_ref
-  ~test_output_raw
-  (Test ({ expectation; results; reached_this_run = _ } as t) : behavior inner)
+      (type behavior)
+      ~expect_node_formatting
+      ~failure_ref
+      ~test_output_raw
+      (Test ({ expectation; results; reached_this_run = _ } as t) : behavior inner)
   =
   let test_output =
     Output.Formatter.apply
@@ -259,7 +325,7 @@ let record_end_of_run t =
 let record_result ~expect_node_formatting ~failure_ref ~test_output_raw (T inner) =
   ignore
     (record_and_return_result ~expect_node_formatting ~failure_ref ~test_output_raw inner
-      : Output.Test_result.t * String_node_format.Delimiter.t)
+     : Output.Test_result.t * String_node_format.Delimiter.t)
 ;;
 
 module Global_results_table = struct
@@ -267,41 +333,88 @@ module Global_results_table = struct
   type postprocess = node list Write_corrected_file.Patch_with_file_contents.t
 
   type file =
-    { expectations : node Hashtbl.M(Expectation_id).t
+    { expectations : (Expectation_id.t, node) Hashtbl.t
     ; postprocess : postprocess
     }
 
-  let global_results_table : file Hashtbl.M(String).t = Hashtbl.create (module String)
+  module Merge_into_action = struct
+    type 'a t =
+      | Remove [@ocaml.warning "-37"]
+      | Set_to of 'a
+  end
+
+  module Hashtbl = struct
+    include Hashtbl
+
+    let change h key ~f =
+      let next =
+        match find h key with
+        | x -> f (Some x)
+        | exception Not_found -> f None
+      in
+      match next with
+      | None -> remove h key
+      | Some x -> replace h key x
+    ;;
+
+    let update t key ~f = change t key ~f:(fun o -> Some (f o))
+
+    let of_alist_exn xs =
+      let h = create 123 in
+      List.iter xs ~f:(fun (k, v) -> add h k v);
+      h
+    ;;
+
+    let merge_into
+      :  src:('k, 'a) t
+      -> dst:('k, 'b) t
+      -> f:(key:'k -> 'a -> 'b option -> 'b Merge_into_action.t)
+      -> unit
+      =
+      fun ~src ~dst ~f ->
+      iter
+        (fun key v ->
+           match f ~key v (find_opt dst key) with
+           | Remove -> remove dst key
+           | Set_to a -> replace dst key a)
+        src
+    ;;
+
+    let data h = Hashtbl.to_seq_values h |> List.of_seq
+    let to_alist h = Hashtbl.to_seq h |> List.of_seq
+  end
+
+  let global_results_table : (string, file) Hashtbl.t = Hashtbl.create 542
 
   let find_test ~absolute_filename ~(test_id : Expectation_id.t) =
-    Hashtbl.find global_results_table absolute_filename
-    |> Option.bind ~f:(fun { expectations; _ } -> Hashtbl.find expectations test_id)
-    |> Option.value_exn
-         ~error:
-           (Error.of_string
-              (Printf.sprintf
-                 "Internal expect test bug: could not find test\nFile: %s\nID:   %d"
-                 absolute_filename
-                 (Expectation_id.to_int_exn test_id)))
+    Hashtbl.find_opt global_results_table absolute_filename
+    |> Option.bind ~f:(fun { expectations; _ } -> Hashtbl.find_opt expectations test_id)
+    |> function
+    | Some x -> x
+    | None ->
+      raise
+        (Failure
+           (Printf.sprintf
+              "Internal expect test bug: could not find test\nFile: %s\nID:   %d"
+              absolute_filename
+              (Expectation_id.to_int_exn test_id)))
   ;;
 
   let initialize_and_register_tests ~absolute_filename tests postprocess =
     let tests_as_in_table = Queue.create () in
     Hashtbl.update global_results_table absolute_filename ~f:(fun file ->
       let file =
-        Option.value
-          file
-          ~default:{ expectations = Hashtbl.create (module Expectation_id); postprocess }
+        Option.value file ~default:{ expectations = Hashtbl.create 542; postprocess }
       in
-      let tests = Hashtbl.of_alist_exn (module Expectation_id) tests in
+      let tests = Hashtbl.of_alist_exn tests in
       Hashtbl.merge_into
         ~src:tests
         ~dst:file.expectations
         ~f:(fun ~key:test_id new_test existing_test ->
-        let (T (Test t) as test) = Option.value existing_test ~default:new_test in
-        t.reached_this_run <- false;
-        Queue.enqueue tests_as_in_table (test_id, test);
-        Set_to test);
+          let (T (Test t) as test) = Option.value existing_test ~default:new_test in
+          t.reached_this_run <- false;
+          Queue.enqueue tests_as_in_table (test_id, test);
+          Set_to test);
       file);
     Queue.to_list tests_as_in_table
   ;;
@@ -311,8 +424,8 @@ module Global_results_table = struct
     |> Hashtbl.to_alist
     |> List.sort ~compare:(Comparable.lift ~f:fst String.compare)
     |> List.map ~f:(fun (filename, { expectations; postprocess }) ->
-         let test_nodes = Hashtbl.data expectations in
-         f ~filename ~test_nodes ~postprocess)
+      let test_nodes = Hashtbl.data expectations in
+      f ~filename ~test_nodes ~postprocess)
   ;;
 end
 
@@ -344,10 +457,10 @@ module For_mlt = struct
   ;;
 
   let record_and_return_number_of_lines_in_correction
-    ~expect_node_formatting
-    ~failure_ref
-    ~test_output_raw
-    (T (Test inner))
+        ~expect_node_formatting
+        ~failure_ref
+        ~test_output_raw
+        (T (Test inner))
     =
     match
       record_and_return_result

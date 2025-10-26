@@ -1,5 +1,5 @@
-open! Base
-
+let raise_s s = failwith (Sexplib0.Sexp.to_string_hum s)
+let sexp_of_string = Sexplib0.Sexp_conv.sexp_of_string
 let current = ref None
 
 let set ~filename_rel_to_project_root =
@@ -7,7 +7,7 @@ let set ~filename_rel_to_project_root =
   | None -> current := Some filename_rel_to_project_root
   | Some current ->
     raise_s
-      (Sexp.message
+      (Sexplib0.Sexp.message
          "Expect_test_collector.set: there is already an active file"
          [ "old_file", sexp_of_string current
          ; "new_file", sexp_of_string filename_rel_to_project_root
@@ -18,19 +18,21 @@ let unset () =
   match !current with
   | Some _ -> current := None
   | None ->
-    raise_s (Sexp.message "Expect_test_collector.unset: there is no active file" [])
+    raise_s
+      (Sexplib0.Sexp.message "Expect_test_collector.unset: there is no active file" [])
 ;;
 
 let get () =
   match !current with
   | Some fn -> fn
-  | None -> raise_s (Sexp.message "Expect_test_collector.get: there is no active file" [])
+  | None ->
+    raise_s
+      (Sexplib0.Sexp.message "Expect_test_collector.get: there is no active file" [])
 ;;
 
-let initial_dir =
-  let dir_or_error = Or_error.try_with ~backtrace:true Stdlib.Sys.getcwd in
-  lazy (Or_error.ok_exn dir_or_error)
-;;
+let initial_dir = lazy (Stdlib.Sys.getcwd ())
+(* let dir_or_error = Or_error.try_with ~backtrace:true Stdlib.Sys.getcwd in
+  lazy (Or_error.ok_exn dir_or_error) *)
 
 let absolute_path file =
   if Stdlib.Filename.is_relative file

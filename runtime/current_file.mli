@@ -1,5 +1,3 @@
-open! Base
-
 (** We dynamically keep track of the "currently executing" file to make sure tests are
     not being run from outside the file in which they are defined. *)
 

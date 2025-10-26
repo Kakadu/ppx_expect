@@ -1,23 +1,66 @@
-open! Base
 open! Import
+
+module String = struct
+  include String
+
+  let chop_prefix_if_exists path ~prefix =
+    if starts_with ~prefix path
+    then StringLabels.sub path ~pos:(length prefix) ~len:(length path - length prefix)
+    else path
+  ;;
+
+  let rfindi ?pos t ~f =
+    let rec loop i = if i < 0 then None else if f i t.[i] then Some i else loop (i - 1) in
+    let pos =
+      match pos with
+      | Some pos -> pos
+      | None -> String.length t - 1
+    in
+    loop pos
+  ;;
+
+  let prefix s n = String.sub s 0 n
+  let last_non_drop ~drop t = rfindi t ~f:(fun _ c -> not (drop c))
+
+  let is_whitespace = function
+    | '\t' | '\n' | '\011' (* vertical tab *) | '\012' (* form feed *) | '\r' | ' ' ->
+      true
+    | _ -> false
+  ;;
+
+  let rstrip ?(drop = is_whitespace) t =
+    match last_non_drop t ~drop with
+    | None -> ""
+    | Some i -> if i = String.length t - 1 then t else prefix t (i + 1)
+  ;;
+
+  let ( = ) : t -> t -> bool = equal
+end
+
+module Sys = struct
+  include Sys
+
+  (* let getenv_exn = getenv *)
+  let getenv = getenv_opt
+end
 
 let chop_if_exists ~ancestor ~from:path =
   String.chop_prefix_if_exists path ~prefix:(ancestor ^ "/")
 ;;
 
 let f
-  ?(use_dot_patdiff = false)
-  ?corrected_path
-  ?(use_color = false)
-  ?diff_command
-  ?diff_path_prefix
-  ~next_contents
-  ~path
-  ()
+      ?(use_dot_patdiff = false)
+      ?corrected_path
+      ?(use_color = false)
+      ?diff_command
+      ?diff_path_prefix
+      ~next_contents
+      ~path
+      ()
   =
   let prev_contents =
     if Stdlib.Sys.file_exists path
-    then Stdio.In_channel.with_file path ~f:Stdio.In_channel.input_all
+    then Stdlib.In_channel.with_open_text path Stdlib.In_channel.input_all
     else ""
   in
   match String.( = ) prev_contents next_contents with
@@ -31,7 +74,8 @@ let f
   | false ->
     let default_corrected_path = path ^ ".corrected" in
     let corrected_path = Option.value corrected_path ~default:default_corrected_path in
-    Stdio.Out_channel.write_all corrected_path ~data:next_contents;
+    Stdlib.Out_channel.with_open_text corrected_path (fun ch ->
+      Stdlib.output_string ch next_contents);
     let extra_patdiff_args =
       let default_configs =
         match use_dot_patdiff && Option.is_none (Sys.getenv "TESTING_FRAMEWORK") with
@@ -61,5 +105,5 @@ let f
       ~file1:path
       ~file2:corrected_path
       ();
-    Error (Error.of_string "Changes found.")
+    Error `Changes_found
 ;;

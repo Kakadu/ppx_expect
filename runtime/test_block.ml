@@ -1,5 +1,42 @@
-open! Base
 open Types
+module List = ListLabels
+
+module Source_code_position = struct
+  type t = Lexing.position
+
+  (* This is the same function as Ppx_here.lift_position_as_string. *)
+  let make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol =
+    String.concat
+      ""
+      [ pos_fname; ":"; Int.to_string pos_lnum; ":"; Int.to_string (pos_cnum - pos_bol) ]
+  ;;
+
+  let to_string { Stdlib.Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol } =
+    make_location_string ~pos_fname ~pos_lnum ~pos_cnum ~pos_bol
+  ;;
+end
+
+module String = struct
+  include StringLabels
+
+  let strip = trim
+end
+
+let raise_s s = failwith (Sexplib0.Sexp.to_string_hum s)
+let sexp_of_string = Sexplib0.Sexp_conv.sexp_of_string
+let sexp_of_int = Sexplib0.Sexp_conv.sexp_of_int
+
+module Option = struct
+  include Option
+
+  let map x ~f = map f x
+  let value_exn = get
+
+  let iter ~f = function
+    | Some x -> f x
+    | None -> ()
+  ;;
+end
 
 (* [Shared] and [Configured] primarily contain boilerplate involving the FFI and printing
    [CR]s. The interesting logic is in [Make]. *)
@@ -123,17 +160,19 @@ module Configured (C : Expect_test_config_types.S) = struct
         Printf.sprintf "%s%s%s" lpad header rpad)
     in
     let outputs_with_headers =
-      List.concat_mapi outputs ~f:(fun index output -> [ header index; output ])
+      List.concat
+        (ListLabels.mapi outputs ~f:(fun index output -> [ header index; output ]))
     in
-    String.concat (cr :: outputs_with_headers) ~sep:"\n"
+    StringLabels.concat (cr :: outputs_with_headers) ~sep:"\n"
   ;;
 
   let sanitize = C.sanitize
 
   let check_for_backtraces s =
-    if List.exists
-         ~f:(fun substring -> String.is_substring ~substring s)
-         [ "Raised at "; "Called from "; "Raised by primitive operation " ]
+    if
+      List.exists
+        ~f:(fun substring -> Base.String.is_substring ~substring s)
+        [ "Raised at "; "Called from "; "Raised by primitive operation " ]
     then cr_for_backtrace ^ "\n\n" ^ s
     else s
   ;;
@@ -143,7 +182,7 @@ module Configured (C : Expect_test_config_types.S) = struct
     | exception exn ->
       let bt = Stdlib.Printexc.get_raw_backtrace () in
       let exn_string =
-        try Exn.to_string exn with
+        try Printexc.to_string exn with
         | _ ->
           let name =
             Stdlib.Obj.Extension_constructor.of_val exn
@@ -205,22 +244,22 @@ end = struct
           ; location = _
           ; test_block = _
           }
-          ->
-      let sexp_here ~basename ~line_number : Sexp.t =
-        List
-          [ List [ Atom "file"; sexp_of_string basename ]
-          ; List [ Atom "line"; sexp_of_int line_number ]
-          ]
-      in
-      raise_s
-        (Sexp.message
-           "Expect_test_runtime: reached one [let%expect_test] from another. Nesting \
-            expect\n\
-            tests is prohibited."
-           [ ( "outer_test"
-             , sexp_here ~basename:outer_basename ~line_number:outer_line_number )
-           ; "inner_test", sexp_here ~basename ~line_number
-           ]))
+        ->
+        let sexp_here ~basename ~line_number : Sexplib0.Sexp.t =
+          List
+            [ List [ Atom "file"; sexp_of_string basename ]
+            ; List [ Atom "line"; sexp_of_int line_number ]
+            ]
+        in
+        raise_s
+          (Sexplib0.Sexp.message
+             "Expect_test_runtime: reached one [let%expect_test] from another. Nesting \
+              expect\n\
+              tests is prohibited."
+             [ ( "outer_test"
+               , sexp_here ~basename:outer_basename ~line_number:outer_line_number )
+             ; "inner_test", sexp_here ~basename ~line_number
+             ]))
   ;;
 end
 
@@ -256,27 +295,27 @@ module Make (C : Expect_test_config_types.S) = struct
   ;;
 
   let run_suite
-    ~filename_rel_to_project_root
-    ~line_number
-    ~(location : Compact_loc.t)
-    ~(trailing_loc : Compact_loc.t)
-    ~(body_loc : Compact_loc.t)
-    ~formatting_flexibility
-    ~expected_exn
-    ~trailing_test_id
-    ~exn_test_id
-    ~description
-    ~tags
-    ~inline_test_config
-    ~expectations
-    f
+        ~filename_rel_to_project_root
+        ~line_number
+        ~(location : Compact_loc.t)
+        ~(trailing_loc : Compact_loc.t)
+        ~(body_loc : Compact_loc.t)
+        ~formatting_flexibility
+        ~expected_exn
+        ~trailing_test_id
+        ~exn_test_id
+        ~description
+        ~tags
+        ~inline_test_config
+        ~expectations
+        f
     =
     let ({ start_bol; start_pos; end_pos } : Compact_loc.t) = location in
     let basename = Stdlib.Filename.basename filename_rel_to_project_root in
     (* Even if the current tag set indicates this test should be dropped, check that it
        wasn't reached from another expect test *)
     Current_test.assert_no_test_running ~basename ~line_number;
-    Ppx_inline_test_lib.test
+    Ppx_inline_test_nobase_lib.test
       ~config:inline_test_config
       ~descr:(lazy (Option.value description ~default:""))
       ~tags
@@ -285,91 +324,93 @@ module Make (C : Expect_test_config_types.S) = struct
       ~start_pos:(start_pos - start_bol)
       ~end_pos:(end_pos - start_bol)
       (fun () ->
-        (* Check that the test is being run from the file in which it was defined *)
-        Current_file.verify_that_file_is_current_exn
-          ~line_number
-          ~filename_rel_to_project_root;
-        let absolute_filename = Current_file.absolute_path basename in
-        (* Create the tests for trailing output and uncaught exceptions *)
-        let expectations =
-          let trailing_test =
-            Expectation.expect_trailing
-              ~insert_loc:
-                { loc = { trailing_loc with end_pos = trailing_loc.start_pos }; body_loc }
-            |> Test_node.of_expectation
-          in
-          let exn_test =
-            match expected_exn with
-            | Some _ ->
-              Expectation.expect_uncaught_exn
-                ~formatting_flexibility
-                ~located_payload:expected_exn
-                ~node_loc:trailing_loc
-              |> Test_node.of_expectation
-            | None ->
-              Expectation.expect_no_uncaught_exn
-                ~insert_loc:{ loc = trailing_loc; body_loc }
-              |> Test_node.of_expectation
-          in
-          (exn_test_id, exn_test) :: (trailing_test_id, trailing_test) :: expectations
-        in
-        (* Add the tests to the global table and reset their [reached_this_run] flags *)
-        let expectations =
-          Test_node.Global_results_table.initialize_and_register_tests
-            ~absolute_filename
-            expectations
-            (fun ~original_file_contents ts ->
-            List.concat_map
-              ts
-              ~f:
-                (Test_node.For_mlt.to_diffs
-                   ~cr_for_multiple_outputs:Configured.cr_for_multiple_outputs
-                   ~expect_node_formatting:Expect_node_formatting.default
-                   ~original_file_contents))
-        in
-        (* To avoid capturing not-yet flushed data of the stdout/stderr buffers. *)
-        Shared.flush ();
-        (* Redirect stdout/stderr *)
-        let test_block = Shared.set_up_block absolute_filename in
-        (* Run the test *)
-        Current_test.set { line_number; basename; location; test_block };
-        let test_exn =
-          Configured.dump_backtrace (fun () ->
-            (* Ignore output that was printed before the test started *)
-            let (_ : string) = Shared.read_test_output_unsanitized test_block in
-            f ())
-        in
-        (* Run the trailing output and uncaught exn test *)
-        let test_output, test_to_run =
-          let trailing_output =
-            let trailing_raw = read_test_output_sanitized_and_checked () in
-            match String.strip trailing_raw with
-            | "" -> None
-            | _ -> Some trailing_raw
-          in
-          match test_exn with
-          | None -> Option.value trailing_output ~default:"", trailing_test_id
-          | Some test_exn ->
-            let test_output =
-              match trailing_output with
-              | None -> test_exn
-              | Some trailing_output ->
-                String.concat
-                  ~sep:"\n"
-                  [ test_exn; "Trailing output"; "---------------"; trailing_output ]
-            in
-            test_output, exn_test_id
-        in
-        run_test_inner test_block ~test_output_raw:test_output ~test_id:test_to_run;
-        (* Perform the per-test reachability check *)
-        List.iter expectations ~f:(fun (_, test_node) ->
-          Test_node.record_end_of_run test_node);
-        (* Restore stdout/stderr *)
-        Shared.clean_up_block test_block;
-        Current_test.unset ();
-        (* Report that this test passed, because we report expect test failures by a
-            different mechanism. *)
-        true)
+         (* Check that the test is being run from the file in which it was defined *)
+         Current_file.verify_that_file_is_current_exn
+           ~line_number
+           ~filename_rel_to_project_root;
+         let absolute_filename = Current_file.absolute_path basename in
+         (* Create the tests for trailing output and uncaught exceptions *)
+         let expectations =
+           let trailing_test =
+             Expectation.expect_trailing
+               ~insert_loc:
+                 { loc = { trailing_loc with end_pos = trailing_loc.start_pos }
+                 ; body_loc
+                 }
+             |> Test_node.of_expectation
+           in
+           let exn_test =
+             match expected_exn with
+             | Some _ ->
+               Expectation.expect_uncaught_exn
+                 ~formatting_flexibility
+                 ~located_payload:expected_exn
+                 ~node_loc:trailing_loc
+               |> Test_node.of_expectation
+             | None ->
+               Expectation.expect_no_uncaught_exn
+                 ~insert_loc:{ loc = trailing_loc; body_loc }
+               |> Test_node.of_expectation
+           in
+           (exn_test_id, exn_test) :: (trailing_test_id, trailing_test) :: expectations
+         in
+         (* Add the tests to the global table and reset their [reached_this_run] flags *)
+         let expectations =
+           Test_node.Global_results_table.initialize_and_register_tests
+             ~absolute_filename
+             expectations
+             (fun ~original_file_contents ts ->
+                List.concat_map
+                  ts
+                  ~f:
+                    (Test_node.For_mlt.to_diffs
+                       ~cr_for_multiple_outputs:Configured.cr_for_multiple_outputs
+                       ~expect_node_formatting:Expect_node_formatting.default
+                       ~original_file_contents))
+         in
+         (* To avoid capturing not-yet flushed data of the stdout/stderr buffers. *)
+         Shared.flush ();
+         (* Redirect stdout/stderr *)
+         let test_block = Shared.set_up_block absolute_filename in
+         (* Run the test *)
+         Current_test.set { line_number; basename; location; test_block };
+         let test_exn =
+           Configured.dump_backtrace (fun () ->
+             (* Ignore output that was printed before the test started *)
+             let (_ : string) = Shared.read_test_output_unsanitized test_block in
+             f ())
+         in
+         (* Run the trailing output and uncaught exn test *)
+         let test_output, test_to_run =
+           let trailing_output =
+             let trailing_raw = read_test_output_sanitized_and_checked () in
+             match String.strip trailing_raw with
+             | "" -> None
+             | _ -> Some trailing_raw
+           in
+           match test_exn with
+           | None -> Option.value trailing_output ~default:"", trailing_test_id
+           | Some test_exn ->
+             let test_output =
+               match trailing_output with
+               | None -> test_exn
+               | Some trailing_output ->
+                 String.concat
+                   ~sep:"\n"
+                   [ test_exn; "Trailing output"; "---------------"; trailing_output ]
+             in
+             test_output, exn_test_id
+         in
+         run_test_inner test_block ~test_output_raw:test_output ~test_id:test_to_run;
+         (* Perform the per-test reachability check *)
+         List.iter expectations ~f:(fun (_, test_node) ->
+           Test_node.record_end_of_run test_node);
+         (* Restore stdout/stderr *)
+         Shared.clean_up_block test_block;
+         Current_test.unset ();
+         (* Report that this test passed, because we report expect test failures by a
+           different mechanism. *)
+         true)
   ;;
 end
 
@@ -382,22 +423,22 @@ let at_exit () =
         ; location = { start_bol; start_pos; end_pos }
         ; test_block
         }
-        ->
-    Shared.flush ();
-    let fin = Stdlib.open_in_bin (Shared.output_file test_block) in
-    let all_out = Stdlib.really_input_string fin (Stdlib.in_channel_length fin) in
-    Shared.clean_up_block test_block;
-    Stdlib.Printf.eprintf
-      "File %S, line %d, characters %d-%d:\n\
-       Error: program exited while expect test was running!\n\
-       Output captured so far:\n\
-       %s\n\
-       %!"
-      basename
-      line_number
-      (start_pos - start_bol)
-      (end_pos - start_bol)
-      all_out)
+      ->
+      Shared.flush ();
+      let fin = Stdlib.open_in_bin (Shared.output_file test_block) in
+      let all_out = Stdlib.really_input_string fin (Stdlib.in_channel_length fin) in
+      Shared.clean_up_block test_block;
+      Stdlib.Printf.eprintf
+        "File %S, line %d, characters %d-%d:\n\
+         Error: program exited while expect test was running!\n\
+         Output captured so far:\n\
+         %s\n\
+         %!"
+        basename
+        line_number
+        (start_pos - start_bol)
+        (end_pos - start_bol)
+        all_out)
 ;;
 
 module For_external = struct

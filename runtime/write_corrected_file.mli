@@ -19,4 +19,4 @@ val f
   -> filename:string
   -> with_:'a Patch_with_file_contents.t
   -> 'a
-  -> Ppx_inline_test_lib.Test_result.t
+  -> Ppx_inline_test_nobase_lib.Test_result.t

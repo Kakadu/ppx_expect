@@ -1,4 +1,3 @@
-open! Base
 open Types
 
 (** Accumulator of test results for one expect node *)
@@ -80,9 +79,9 @@ module Global_results_table : sig
   *)
   val initialize_and_register_tests
     :  absolute_filename:string
-    -> (Expectation_id.t, node) List.Assoc.t
+    -> (Expectation_id.t * node) List.t
     -> postprocess
-    -> (Expectation_id.t, node) List.Assoc.t
+    -> (Expectation_id.t * node) List.t
 
   val find_test : absolute_filename:string -> test_id:Expectation_id.t -> node
 

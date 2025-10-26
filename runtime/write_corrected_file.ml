@@ -1,5 +1,54 @@
-open! Base
+(* open! Base *)
 open Types
+
+module Comparable = struct
+  let lift cmp ~f x y = cmp (f x) (f y)
+end
+
+module List = struct
+  include ListLabels
+
+  let fold_map t ~init ~f =
+    let acc = ref init in
+    let result =
+      map t ~f:(fun x ->
+        let new_acc, y = f !acc x in
+        acc := new_acc;
+        y)
+    in
+    !acc, result
+  ;;
+
+  let sort l ~compare = Stdlib.ListLabels.sort l ~cmp:compare
+end
+
+module String_ = struct
+  include String
+
+  [@@@warning "-32"]
+
+  let sub = StringLabels.sub
+
+  let subo ?(pos = 0) ?len src =
+    sub
+      src
+      ~pos
+      ~len:
+        (match len with
+         | Some i -> i
+         | None -> length src - pos)
+  ;;
+
+  let sub = Base.String.sub
+  let subo = Base.String.subo
+  let concat ?(sep = "") xs = String.concat sep xs
+end
+
+module String = Base.String
+
+let write_all filename ~data =
+  Stdlib.Out_channel.with_open_text filename (fun ch -> Stdlib.output_string ch data)
+;;
 
 module Patch_with_file_contents = struct
   type 'a t = original_file_contents:string -> 'a -> (Compact_loc.t * string) list
@@ -17,10 +66,10 @@ let rewrite_corrections ~original_file_contents ~corrections =
       corrections
       ~init:0
       ~f:(fun l_pos ({ start_pos; end_pos; start_bol = _ }, correction) ->
-      let code_chunk =
-        String.sub original_file_contents ~pos:l_pos ~len:(start_pos - l_pos)
-      in
-      end_pos, [ code_chunk; correction ])
+        let code_chunk =
+          String.sub original_file_contents ~pos:l_pos ~len:(start_pos - l_pos)
+        in
+        end_pos, [ code_chunk; correction ])
   in
   let result = List.concat strs |> String.concat in
   let rest = String.subo original_file_contents ~pos:l_pos in
@@ -28,7 +77,7 @@ let rewrite_corrections ~original_file_contents ~corrections =
 ;;
 
 let f ~use_color ~in_place ~diff_command ~diff_path_prefix ~filename ~with_ corrections
-  : Ppx_inline_test_lib.Test_result.t
+  : Ppx_inline_test_nobase_lib.Test_result.t
   =
   let dot_corrected = filename ^ ".corrected" in
   let original_file_contents =
@@ -45,13 +94,13 @@ let f ~use_color ~in_place ~diff_command ~diff_path_prefix ~filename ~with_ corr
   match in_place with
   | true ->
     if not (String.equal original_file_contents next_contents)
-    then Stdio.Out_channel.write_all filename ~data:next_contents;
+    then write_all filename ~data:next_contents;
     remove dot_corrected;
     Success
   | false ->
     (match diff_command with
      | Some "-" (* Just write the .corrected file - do not output a diff. *) ->
-       Stdio.Out_channel.write_all dot_corrected ~data:next_contents;
+       write_all dot_corrected ~data:next_contents;
        Success
      | _ ->
        (* By invoking [Make_corrected_file.f] with a fresh temporary file, we avoid the
