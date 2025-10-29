@@ -2,8 +2,7 @@
  (name make_corrected_file_nobase)
  (public_name ppx_expect_nobase.make_corrected_file)
  (libraries
-  base
   ppxlib.print_diff
-  ; stdio
+  ;
   )
  (preprocess no_preprocessing))

@@ -6,8 +6,7 @@
  (public_name ppx_expect_nobase.runtime)
  (libraries
   wrappers
-  ; base
-  ; stdio
+  sexplib
   ppx_inline_test_nobase.runtime-lib
   make_corrected_file_nobase
   expect_test_nobase_config)

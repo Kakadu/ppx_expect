@@ -7,10 +7,11 @@
   ppx_expect_nobase.runtime
   ppx_inline_test_nobase
   ppx_inline_test_nobase.libname
-  ppx_here.expander)
- (ppx_runtime_libraries ppx_expect_nobase.runtime ppx_expect.config)
+  ;
+  )
+ (ppx_runtime_libraries ppx_expect_nobase.runtime ppx_expect_nobase.config)
  (preprocess
   (pps ppxlib.metaquot))
  (inline_tests.backend
-  (runner_libraries ppx_expect.evaluator)
+  (runner_libraries ppx_expect_nobase.evaluator)
   (extends ppx_inline_test_nobase)))
