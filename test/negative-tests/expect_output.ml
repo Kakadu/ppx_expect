@@ -1,9 +1,0 @@
-open! Core
-
-let%expect_test _ =
-  if false
-  then (
-    print_string "hello";
-    print_string [%expect.output];
-    [%expect {||}])
-;;

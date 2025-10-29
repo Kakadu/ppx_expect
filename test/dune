@@ -1,8 +1,0 @@
-(library
- (foreign_stubs
-  (language c)
-  (names non_flushing))
- (name ppx_expect_test)
- (flags :standard -principal)
- (preprocess
-  (pps ppx_assert ppx_expect)))
