@@ -1,6 +1,6 @@
 (lang dune 3.11)
 
-(version "v0.17.3+nobase")
+(version "v0.17.3.0")
 
 (generate_opam_files true)
 
