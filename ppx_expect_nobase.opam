@@ -33,3 +33,5 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/Kakadu/ppx_expect_nobase.git"
+x-maintenance-intent: ["(latest)"] 
+

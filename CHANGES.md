@@ -1,3 +1,7 @@
+## Release v0.17.3.0
+
+Strip base and other dependecies.
+
 ## Release v0.17.0
 
 * Enforce rules for the formatting of the strings in `[%expect]` blocks (their indentation
