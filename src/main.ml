@@ -186,7 +186,8 @@ module P = struct
                           (match attributes with
                            | None -> []
                            | Some x -> x)))
-               ~expr:__)
+               ~expr:__
+              ~constraint_:drop)
           ^:: nil)
        ^:: nil)
   ;;
