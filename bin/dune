@@ -1,0 +1,4 @@
+(executable
+ (name version_check)
+ (modules version_check)
+ (libraries dune-build-info ppxlib opam-core))
