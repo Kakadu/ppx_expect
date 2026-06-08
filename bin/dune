@@ -1,3 +1,9 @@
+(rule
+ (targets lt38.txt ge38.txt)
+ (deps ./version_check.exe)
+ (action
+  (run ./version_check.exe)))
+
 (executable
  (name version_check)
  (modules version_check)

@@ -24,6 +24,7 @@
 
 (library
  (name fake_lt38)
+ (package ppx_expect_nobase)
  (modules)
  (enabled_if
   (and %{read:config/lt38.txt}))
@@ -31,6 +32,7 @@
 
 (library
  (name fake_ge38)
+ (package ppx_expect_nobase)
  (modules)
  (enabled_if
   (and %{read:config/ge38.txt}))

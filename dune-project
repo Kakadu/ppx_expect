@@ -1,4 +1,4 @@
-(lang dune 3.23)
+(lang dune 3.15)
 
 (version "v0.17.3.0")
 
