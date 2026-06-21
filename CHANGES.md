@@ -1,3 +1,12 @@
+## Release v0.17.3.1
+
+* Select implementation based on PPXLIB version. Needed for new compilers.
+* Dune >=3.23 is a consequence of the change above
+
+## Release v0.17.3.0
+
+Strip base and other dependecies.
+
 ## Release v0.17.0
 
 * Enforce rules for the formatting of the strings in `[%expect]` blocks (their indentation

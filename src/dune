@@ -8,6 +8,12 @@
   ppx_inline_test_nobase
   ppx_inline_test_nobase.libname
   ;
+  (select
+   test_select.ml
+   from
+   (fake_lt38 -> test_select.lt38.ml)
+   (fake_ge38 -> test_select.ge38.ml))
+  ;
   )
  (ppx_runtime_libraries ppx_expect_nobase.runtime ppx_expect_nobase.config)
  (preprocess
@@ -15,3 +21,27 @@
  (inline_tests.backend
   (runner_libraries ppx_expect_nobase.evaluator)
   (extends ppx_inline_test_nobase)))
+
+(library
+ (name fake_lt38)
+ (package ppx_expect_nobase)
+ (modules)
+ (enabled_if
+  (and %{read:config/lt38.txt}))
+ (libraries))
+
+(library
+ (name fake_ge38)
+ (package ppx_expect_nobase)
+ (modules)
+ (enabled_if
+  (and %{read:config/ge38.txt}))
+ (libraries))
+
+(subdir
+ config
+ (rule
+  (targets lt38.txt ge38.txt)
+  (deps ../../bin/version_check.exe)
+  (action
+   (run ../../bin/version_check.exe))))

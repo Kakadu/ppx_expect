@@ -1,4 +1,4 @@
-(lang dune 3.11)
+(lang dune 3.15)
 
 (version "0.17.3.0")
 
@@ -38,4 +38,8 @@
   sexplib
   ; re???
   (ppxlib
-   (>= 0.35.0))))
+   (>= 0.35.0))
+  opam-core
+  dune-build-info
+  ;
+  ))
