@@ -1,3 +1,8 @@
+## Release v0.17.3.1
+
+* Select implementation based on PPXLIB version. Needed for new compilers.
+* Dune >=3.23 is a consequence of the change above
+
 ## Release v0.17.3.0
 
 Strip base and other dependecies.
