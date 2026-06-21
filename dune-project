@@ -1,6 +1,6 @@
-(lang dune 3.15)
+(lang dune 3.23)
 
-(version "0.17.3.0")
+(version "0.17.3.1")
 
 (generate_opam_files true)
 
@@ -32,9 +32,9 @@
      (< 5.0.0))
     (and
      (>= 5.3.0)
-     (<= 5.4.0))))
+     (< 5.6.0))))
   (ppx_inline_test_nobase
-   (>= v0.17.0.2))
+   (>= v0.17.0.3))
   sexplib
   ; re???
   (ppxlib
