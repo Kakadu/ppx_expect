@@ -16,7 +16,6 @@ depends: [
   "ppx_inline_test_nobase" {>= "v0.17.0.3"}
   "sexplib"
   "ppxlib" {>= "0.35.0"}
-  "opam-core"
   "dune-build-info"
   "odoc" {with-doc}
 ]

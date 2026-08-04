@@ -39,7 +39,6 @@
   ; re???
   (ppxlib
    (>= 0.35.0))
-  opam-core
   dune-build-info
   ;
   ))
