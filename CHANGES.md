@@ -1,3 +1,7 @@
+## Release 0.17.3.2
+
+* Remove dependecy on opam-core
+
 ## Release 0.17.3.1
 
 * Select implementation based on PPXLIB version. Needed for new compilers.

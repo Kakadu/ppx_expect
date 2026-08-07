@@ -1,6 +1,6 @@
 (lang dune 3.23)
 
-(version "0.17.3.1")
+(version "0.17.3.2")
 
 (generate_opam_files true)
 
@@ -18,6 +18,8 @@
 (homepage "https://github.com/Kakadu/ppx_expect_nobase")
 
 (bug_reports "https://github.com/Kakadu/ppx_expect_nobase/issues")
+
+(maintenance_intent "0.17.3.2" "(latest)")
 
 (package
  (name ppx_expect_nobase)
